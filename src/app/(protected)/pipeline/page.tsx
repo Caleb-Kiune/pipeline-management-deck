@@ -52,7 +52,7 @@ export default async function PipelinePage() {
       <section>
         <h2 className="text-xl font-semibold mb-4">Add New Opportunity</h2>
         <div className="p-6 border rounded-xl shadow-sm max-w-2xl bg-card">
-          <OpportunityForm userId={userId} />
+          <OpportunityForm />
         </div>
       </section>
     </div>

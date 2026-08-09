@@ -1,4 +1,4 @@
-import { PrismaClient, PeriodStatus } from '@prisma/client'
+import { PrismaClient } from '@prisma/client'
 import { auth } from '../src/features/auth/lib/auth'
 
 const prisma = new PrismaClient()
@@ -11,7 +11,7 @@ async function main() {
     data: {
       month: 7,
       year: 2026,
-      status: PeriodStatus.OPEN,
+      status: "OPEN",
     }
   })
   console.log(`Created ReportingPeriod: ${period.month}/${period.year}`)

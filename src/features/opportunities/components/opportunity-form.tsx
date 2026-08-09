@@ -30,11 +30,10 @@ type OpportunityFormValues = z.infer<typeof opportunityFormSchema>;
 
 interface OpportunityFormProps {
   initialData?: OpportunityFormValues & { id?: string };
-  userId: string;
   onSuccess?: () => void;
 }
 
-export function OpportunityForm({ initialData, userId, onSuccess }: OpportunityFormProps) {
+export function OpportunityForm({ initialData, onSuccess }: OpportunityFormProps) {
   const form = useForm<OpportunityFormValues>({
     resolver: zodResolver(opportunityFormSchema),
     defaultValues: initialData || {
@@ -51,9 +50,9 @@ export function OpportunityForm({ initialData, userId, onSuccess }: OpportunityF
   async function onSubmit(data: OpportunityFormValues) {
     try {
       if (initialData?.id) {
-        await updateOpportunity(initialData.id, data);
+        await updateOpportunity(initialData.id, { ...data, id: initialData.id });
       } else {
-        await createOpportunity(data, userId);
+        await createOpportunity(data);
       }
       onSuccess?.();
     } catch (error) {
@@ -85,7 +84,7 @@ export function OpportunityForm({ initialData, userId, onSuccess }: OpportunityF
           render={({ field }) => (
             <FormItem>
               <FormLabel>Category</FormLabel>
-              <Select onValueChange={field.onChange} defaultValue={field.value}>
+              <Select onValueChange={field.onChange} value={field.value}>
                 <FormControl>
                   <SelectTrigger>
                     <SelectValue placeholder="Select category" />
@@ -110,7 +109,7 @@ export function OpportunityForm({ initialData, userId, onSuccess }: OpportunityF
           render={({ field }) => (
             <FormItem>
               <FormLabel>Product</FormLabel>
-              <Select onValueChange={field.onChange} defaultValue={field.value}>
+              <Select onValueChange={field.onChange} value={field.value}>
                 <FormControl>
                   <SelectTrigger>
                     <SelectValue placeholder="Select product" />
@@ -136,7 +135,7 @@ export function OpportunityForm({ initialData, userId, onSuccess }: OpportunityF
             <FormItem>
               <FormLabel>Expected Premium</FormLabel>
               <FormControl>
-                <Input type="number" placeholder="0" {...field} />
+                <Input type="number" placeholder="0" {...field} onChange={e => field.onChange(e.target.valueAsNumber || 0)} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -149,7 +148,7 @@ export function OpportunityForm({ initialData, userId, onSuccess }: OpportunityF
           render={({ field }) => (
             <FormItem>
               <FormLabel>Stage</FormLabel>
-              <Select onValueChange={field.onChange} defaultValue={field.value}>
+              <Select onValueChange={field.onChange} value={field.value}>
                 <FormControl>
                   <SelectTrigger>
                     <SelectValue placeholder="Select stage" />
