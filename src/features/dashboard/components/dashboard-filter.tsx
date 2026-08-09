@@ -30,7 +30,7 @@ export function DashboardFilter() {
   return (
     <div className="flex items-center space-x-2">
       <span className="text-sm font-medium text-muted-foreground">Category:</span>
-      <Select value={currentCategory} onValueChange={onCategoryChange}>
+      <Select value={currentCategory} onValueChange={(val) => onCategoryChange(val as string)}>
         <SelectTrigger className="w-[180px]">
           <SelectValue placeholder="All Categories" />
         </SelectTrigger>

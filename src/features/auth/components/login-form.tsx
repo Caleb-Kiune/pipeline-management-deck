@@ -31,7 +31,7 @@ export function LoginForm() {
       const { data: session } = await authClient.getSession();
       setLoading(false);
       
-      const role = session?.user?.role;
+      const role = (session?.user as { role?: string })?.role;
       if (role === "MANAGEMENT" || role === "ADMIN") {
         router.push("/dashboard");
       } else {
