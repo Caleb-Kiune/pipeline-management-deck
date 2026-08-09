@@ -3,7 +3,7 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Category, Product, Stage } from "@prisma/client";
+import { Product, Stage } from "@prisma/client";
 import { opportunityFormSchema } from "../schemas/opportunity.schema";
 
 import { Button } from "@/components/ui/button";
@@ -38,7 +38,7 @@ export function OpportunityForm({ initialData, onSuccess }: OpportunityFormProps
     resolver: zodResolver(opportunityFormSchema),
     defaultValues: initialData || {
       client_name: "",
-      category: Category.MEDICAL,
+      contact_person: "",
       product: Product.COOP_CARE,
       expected_premium: 0,
       stage: Stage.PROSPECT,
@@ -79,24 +79,13 @@ export function OpportunityForm({ initialData, onSuccess }: OpportunityFormProps
 
         <FormField
           control={form.control}
-          name="category"
+          name="contact_person"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Category</FormLabel>
-              <Select onValueChange={field.onChange} value={field.value}>
-                <FormControl>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select category" />
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent>
-                  {Object.values(Category).map((category) => (
-                    <SelectItem key={category} value={category}>
-                      {category}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <FormLabel>Contact Person (Optional)</FormLabel>
+              <FormControl>
+                <Input placeholder="Enter contact person" {...field} value={field.value || ""} />
+              </FormControl>
               <FormMessage />
             </FormItem>
           )}

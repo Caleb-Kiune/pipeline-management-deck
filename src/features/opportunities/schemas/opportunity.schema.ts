@@ -1,11 +1,9 @@
 import { z } from "zod";
-import { Category, Product, Stage } from "@prisma/client";
+import { Product, Stage } from "@prisma/client";
 
 export const opportunityFormSchema = z.object({
   client_name: z.string().min(1, "Client name is required"),
-  category: z.nativeEnum(Category, {
-    message: "Please select a valid category"
-  }),
+  contact_person: z.string().optional(),
   product: z.nativeEnum(Product, {
     message: "Please select a valid product"
   }),

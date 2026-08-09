@@ -33,7 +33,8 @@ export async function createOpportunity(
     throw new Error("Invalid opportunity data");
   }
 
-  const { stage } = parsed.data;
+  const { stage, product } = parsed.data;
+  const computedCategory = product === "COOP_CARE" ? "MEDICAL" : "NON_MEDICAL";
   let closedAt: Date | null = null;
   if (stage === Stage.CLOSED) {
     closedAt = new Date();
@@ -42,6 +43,7 @@ export async function createOpportunity(
   const opportunity = await prisma.opportunity.create({
     data: {
       ...parsed.data,
+      category: computedCategory,
       user_id: session.user.id,
       period_id: activePeriod.id,
       closed_at: closedAt,
@@ -72,6 +74,11 @@ export async function updateOpportunity(
 
   const updateData: Record<string, any> = { ...parsed.data };
   
+  // Auto-compute category if product is being updated
+  if (updateData.product) {
+    updateData.category = updateData.product === "COOP_CARE" ? "MEDICAL" : "NON_MEDICAL";
+  }
+
   // State Machine Logic for closed_at
   if (updateData.stage) {
     if (updateData.stage === Stage.CLOSED && existingOpportunity.stage !== Stage.CLOSED) {
