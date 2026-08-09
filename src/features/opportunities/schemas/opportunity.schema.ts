@@ -14,7 +14,7 @@ export const opportunityFormSchema = z.object({
     message: "Please select a valid stage"
   }),
   latest_comment: z.string().optional(),
-  period_id: z.string().uuid("Invalid period ID"),
+
 });
 
 export const createOpportunitySchema = opportunityFormSchema;

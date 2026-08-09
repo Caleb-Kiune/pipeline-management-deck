@@ -43,7 +43,6 @@ export function OpportunityForm({ initialData, onSuccess }: OpportunityFormProps
       expected_premium: 0,
       stage: Stage.PROSPECT,
       latest_comment: "",
-      period_id: "",
     },
   });
 
@@ -167,19 +166,6 @@ export function OpportunityForm({ initialData, onSuccess }: OpportunityFormProps
           )}
         />
 
-        <FormField
-          control={form.control}
-          name="period_id"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Reporting Period ID</FormLabel>
-              <FormControl>
-                <Input placeholder="Reporting Period UUID" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
 
         <FormField
           control={form.control}
