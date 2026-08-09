@@ -1,0 +1,59 @@
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { COODashboardStats } from "../actions/dashboard.queries";
+
+interface COOPerformanceTableProps {
+  performanceData: COODashboardStats[];
+}
+
+export function COOPerformanceTable({ performanceData }: COOPerformanceTableProps) {
+  const formatter = new Intl.NumberFormat("en-KE", {
+    style: "currency",
+    currency: "KES",
+  });
+
+  return (
+    <div className="rounded-md border bg-card">
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>Branch</TableHead>
+            <TableHead>COO Name</TableHead>
+            <TableHead className="text-right">Target</TableHead>
+            <TableHead className="text-right">Reported Closed</TableHead>
+            <TableHead className="text-right">Pipeline</TableHead>
+            <TableHead className="text-right">Achievement %</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {performanceData.length === 0 ? (
+            <TableRow>
+              <TableCell colSpan={6} className="text-center">
+                No COO data found.
+              </TableCell>
+            </TableRow>
+          ) : (
+            performanceData.map((coo) => (
+              <TableRow key={coo.id}>
+                <TableCell>{coo.branchName}</TableCell>
+                <TableCell className="font-medium">{coo.name}</TableCell>
+                <TableCell className="text-right">{formatter.format(coo.targetValue)}</TableCell>
+                <TableCell className="text-right">{formatter.format(coo.reportedClosed)}</TableCell>
+                <TableCell className="text-right">{formatter.format(coo.pipelineValue)}</TableCell>
+                <TableCell className="text-right font-medium">
+                  {coo.achievementPercentage.toFixed(2)}%
+                </TableCell>
+              </TableRow>
+            ))
+          )}
+        </TableBody>
+      </Table>
+    </div>
+  );
+}
