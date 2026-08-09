@@ -69,10 +69,11 @@ model Branch {
 }
 
 model Target {
-  id           String @id @default(uuid())
-  user_id      String
-  period_id    String
-  target_value Float
+  id                 String @id @default(uuid())
+  user_id            String
+  period_id          String
+  medical_target     Float  @default(0)
+  non_medical_target Float  @default(0)
 
   user   User            @relation(fields: [user_id], references: [id])
   period ReportingPeriod @relation(fields: [period_id], references: [id])
@@ -81,6 +82,7 @@ model Target {
 model Opportunity {
   id               String    @id @default(uuid())
   client_name      String
+  contact_person   String?
   category         Category
   product          Product
   expected_premium Float
