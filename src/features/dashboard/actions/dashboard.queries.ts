@@ -55,7 +55,11 @@ export async function getDashboardStats(
 
   const cooPerformance: COODashboardStats[] = coos.map((coo) => {
     // Target is typically one per period per user
-    const targetValue = coo.targets.reduce((sum, t) => sum + t.target_value, 0);
+    const targetValue = coo.targets.reduce((sum, t) => {
+      if (categoryFilter === "MEDICAL") return sum + t.medical_target;
+      if (categoryFilter === "NON_MEDICAL") return sum + t.non_medical_target;
+      return sum + t.medical_target + t.non_medical_target;
+    }, 0);
     
     let reportedClosed = 0;
     let pipelineValue = 0;

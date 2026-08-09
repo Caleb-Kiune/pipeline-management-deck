@@ -1,3 +1,4 @@
+import Link from "next/link";
 import {
   Table,
   TableBody,
@@ -42,7 +43,11 @@ export function COOPerformanceTable({ performanceData }: COOPerformanceTableProp
             performanceData.map((coo) => (
               <TableRow key={coo.id}>
                 <TableCell>{coo.branchName}</TableCell>
-                <TableCell className="font-medium">{coo.name}</TableCell>
+                <TableCell className="font-medium">
+                  <Link href={`/dashboard/coo/${coo.id}`} className="text-primary hover:underline">
+                    {coo.name}
+                  </Link>
+                </TableCell>
                 <TableCell className="text-right">{formatter.format(coo.targetValue)}</TableCell>
                 <TableCell className="text-right">{formatter.format(coo.reportedClosed)}</TableCell>
                 <TableCell className="text-right">{formatter.format(coo.pipelineValue)}</TableCell>
