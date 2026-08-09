@@ -77,6 +77,8 @@ model Target {
 
   user   User            @relation(fields: [user_id], references: [id])
   period ReportingPeriod @relation(fields: [period_id], references: [id])
+
+  @@unique([user_id, period_id])
 }
 
 model Opportunity {
