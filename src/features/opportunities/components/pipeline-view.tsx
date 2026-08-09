@@ -37,8 +37,8 @@ function getStageBadgeVariant(stage: Stage) {
 
 export function PipelineView({ opportunities }: PipelineViewProps) {
   return (
-    <div className="rounded-md border">
-      <Table>
+    <div className="w-full overflow-x-auto rounded-md border bg-card">
+      <Table className="min-w-[800px]">
         <TableHeader>
           <TableRow>
             <TableHead>Client</TableHead>

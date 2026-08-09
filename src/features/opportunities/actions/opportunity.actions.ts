@@ -1,19 +1,33 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { PrismaClient, Prisma, Stage } from "@prisma/client";
+import { PrismaClient, Prisma, Stage, PeriodStatus } from "@prisma/client";
 import { createOpportunitySchema, updateOpportunitySchema } from "../schemas/opportunity.schema";
 import { z } from "zod";
+import { auth } from "@/features/auth/lib/auth";
+import { headers } from "next/headers";
 
 const prisma = new PrismaClient();
-
-// TEMP SANDBOX IDs
-const TEMP_USER_ID = "1ce45016-5cbf-4768-b1f2-df7b1c068073"; // Jacob Mwangi
-const TEMP_PERIOD_ID = "db61149d-c02f-4f12-aaee-42f293b21121"; // Active Reporting Period
 
 export async function createOpportunity(
   data: z.infer<typeof createOpportunitySchema>
 ) {
+  const session = await auth.api.getSession({
+    headers: await headers(),
+  });
+  
+  if (!session) {
+    throw new Error("Unauthorized");
+  }
+
+  const activePeriod = await prisma.reportingPeriod.findFirst({
+    where: { status: PeriodStatus.OPEN }
+  });
+
+  if (!activePeriod) {
+    throw new Error("No active reporting period found");
+  }
+
   const parsed = createOpportunitySchema.safeParse(data);
   if (!parsed.success) {
     throw new Error("Invalid opportunity data");
@@ -28,13 +42,13 @@ export async function createOpportunity(
   const opportunity = await prisma.opportunity.create({
     data: {
       ...parsed.data,
-      user_id: TEMP_USER_ID,
-      period_id: TEMP_PERIOD_ID,
+      user_id: session.user.id,
+      period_id: activePeriod.id,
       closed_at: closedAt,
     },
   });
 
-  revalidatePath("/test");
+  revalidatePath("/pipeline");
   return opportunity;
 }
 

@@ -196,7 +196,7 @@ export function OpportunityForm({ initialData, userId, onSuccess }: OpportunityF
           )}
         />
 
-        <Button type="submit">Save Opportunity</Button>
+        <Button type="submit" className="w-full">Save Opportunity</Button>
       </form>
     </Form>
   );

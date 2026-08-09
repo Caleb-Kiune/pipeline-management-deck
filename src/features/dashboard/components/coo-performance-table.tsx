@@ -19,8 +19,8 @@ export function COOPerformanceTable({ performanceData }: COOPerformanceTableProp
   });
 
   return (
-    <div className="rounded-md border bg-card">
-      <Table>
+    <div className="w-full overflow-x-auto rounded-md border bg-card">
+      <Table className="min-w-[800px]">
         <TableHeader>
           <TableRow>
             <TableHead>Branch</TableHead>

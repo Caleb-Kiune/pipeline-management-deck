@@ -1,4 +1,5 @@
-import { PrismaClient, Role, PeriodStatus } from '@prisma/client'
+import { PrismaClient, PeriodStatus } from '@prisma/client'
+import { auth } from '../src/features/auth/lib/auth'
 
 const prisma = new PrismaClient()
 
@@ -28,34 +29,44 @@ async function main() {
   })
   console.log(`Created Branches: ${westlands.name}, ${thika.name}`)
 
-  // 3. Create Users
-  const hildah = await prisma.user.create({
-    data: {
+  // 3. Create Users using Better Auth
+  
+  // Use a pseudo-request to satisfy Better Auth api Context 
+  const mockHeaders = new Headers();
+
+  const hildahRes = await auth.api.signUpEmail({
+    body: {
       email: 'hildah.kanyi@example.com',
       name: 'Hildah Kanyi',
-      role: Role.COO,
-      branch_id: westlands.id,
-    }
-  })
+      password: 'password123',
+      role: "COO",
+      branch_id: westlands.id
+    },
+    asResponse: false
+  });
 
-  const jacob = await prisma.user.create({
-    data: {
+  const jacobRes = await auth.api.signUpEmail({
+    body: {
       email: 'jacob.mwangi@example.com',
       name: 'Jacob Mwangi',
-      role: Role.COO,
-      branch_id: thika.id,
-    }
-  })
+      password: 'password123',
+      role: "COO",
+      branch_id: thika.id
+    },
+    asResponse: false
+  });
 
-  const management = await prisma.user.create({
-    data: {
+  const managementRes = await auth.api.signUpEmail({
+    body: {
       email: 'management@example.com',
       name: 'Management User',
-      role: Role.MANAGEMENT,
-    }
-  })
-  console.log(`Created Users: ${hildah.name}, ${jacob.name}, ${management.name}`)
+      password: 'password123',
+      role: "MANAGEMENT"
+    },
+    asResponse: false
+  });
 
+  console.log(`Created Users successfully with Better Auth`)
   console.log('Seeding finished.')
 }
 
