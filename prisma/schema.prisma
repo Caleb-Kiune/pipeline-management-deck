@@ -1,13 +1,163 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Get a free hosted Postgres database in seconds: `npx create-db`
-
 generator client {
-  provider = "prisma-client"
-  output   = "../src/generated/prisma"
+  provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "postgresql" // Assuming Postgres, can be updated as needed
+  url      = env("DATABASE_URL")
+}
+
+// ==========================================
+// Enums
+// ==========================================
+
+enum Category {
+  MEDICAL
+  NON_MEDICAL
+}
+
+enum Product {
+  COOP_CARE
+  JILINDE
+  JIKINGE
+  GFE
+  STUDENTS_PA
+  LIVESTOCK
+  BIASHARA_SALAMA
+  HOSPICASH
+  OTHER
+}
+
+enum Stage {
+  PROSPECT
+  QUOTED
+  CLOSED
+  LOST
+}
+
+enum PeriodStatus {
+  OPEN
+  RECONCILED
+  LOCKED
+}
+
+enum Role {
+  COO
+  MANAGEMENT
+  ADMIN
+}
+
+// ==========================================
+// Domain Models
+// ==========================================
+
+model ReportingPeriod {
+  id     String       @id @default(uuid())
+  month  Int
+  year   Int
+  status PeriodStatus
+
+  targets       Target[]
+  opportunities Opportunity[]
+}
+
+model Branch {
+  id   String @id @default(uuid())
+  name String
+
+  users User[]
+}
+
+model Target {
+  id           String @id @default(uuid())
+  user_id      String
+  period_id    String
+  target_value Float
+
+  user   User            @relation(fields: [user_id], references: [id])
+  period ReportingPeriod @relation(fields: [period_id], references: [id])
+}
+
+model Opportunity {
+  id               String    @id @default(uuid())
+  client_name      String
+  category         Category
+  product          Product
+  expected_premium Float
+  stage            Stage
+  latest_comment   String?
+  user_id          String
+  period_id        String
+  created_at       DateTime  @default(now())
+  updated_at       DateTime  @updatedAt
+  closed_at        DateTime?
+
+  user   User            @relation(fields: [user_id], references: [id])
+  period ReportingPeriod @relation(fields: [period_id], references: [id])
+}
+
+// ==========================================
+// Auth & User Models (Better Auth Configured)
+// ==========================================
+
+model User {
+  id            String    @id @default(uuid())
+  email         String    @unique
+  name          String
+  role          Role      @default(COO)
+  branch_id     String?
+  
+  // Better Auth required standard fields
+  emailVerified Boolean?
+  image         String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  branch        Branch?   @relation(fields: [branch_id], references: [id])
+
+  targets       Target[]
+  opportunities Opportunity[]
+  
+  sessions      Session[]
+  accounts      Account[]
+}
+
+model Session {
+  id        String   @id @default(uuid())
+  expiresAt DateTime
+  token     String
+  createdAt DateTime
+  updatedAt DateTime
+  ipAddress String?
+  userAgent String?
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([token])
+}
+
+model Account {
+  id                    String    @id @default(uuid())
+  accountId             String
+  providerId            String
+  userId                String
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime
+  updatedAt             DateTime
+}
+
+model Verification {
+  id         String    @id @default(uuid())
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime?
+  updatedAt  DateTime?
 }
