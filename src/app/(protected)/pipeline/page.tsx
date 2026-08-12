@@ -4,8 +4,7 @@ import { redirect } from "next/navigation";
 import { PrismaClient, PeriodStatus } from "@prisma/client";
 import { getCOOPipeline, getCOOKPIs } from "@/features/opportunities/actions/opportunity.queries";
 import { KPICards } from "@/features/opportunities/components/kpi-cards";
-import { PipelineView } from "@/features/opportunities/components/pipeline-view";
-import { OpportunityForm } from "@/features/opportunities/components/opportunity-form";
+import { PipelineWorkspace } from "@/features/opportunities/components/pipeline-workspace";
 
 const prisma = new PrismaClient();
 
@@ -44,17 +43,7 @@ export default async function PipelinePage() {
         <KPICards pipelineValue={kpis.pipelineValue} reportedClosed={kpis.reportedClosed} />
       </section>
 
-      <section>
-        <h2 className="text-xl font-semibold mb-4">Current Pipeline</h2>
-        <PipelineView opportunities={pipeline} />
-      </section>
-
-      <section>
-        <h2 className="text-xl font-semibold mb-4">Add New Opportunity</h2>
-        <div className="p-6 border rounded-xl shadow-sm max-w-2xl bg-card">
-          <OpportunityForm />
-        </div>
-      </section>
+      <PipelineWorkspace opportunities={pipeline} />
     </div>
   );
 }

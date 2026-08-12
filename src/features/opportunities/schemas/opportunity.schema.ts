@@ -7,7 +7,7 @@ export const opportunityFormSchema = z.object({
   product: z.nativeEnum(Product, {
     message: "Please select a valid product"
   }),
-  expected_premium: z.number().positive("Expected premium must be a positive number"),
+  expected_premium: z.coerce.number().positive("Expected premium must be a positive number"),
   stage: z.nativeEnum(Stage, {
     message: "Please select a valid stage"
   }),

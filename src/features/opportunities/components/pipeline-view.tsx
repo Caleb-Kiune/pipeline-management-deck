@@ -13,6 +13,7 @@ import { Stage } from "@prisma/client";
 
 interface PipelineViewProps {
   opportunities: Opportunity[];
+  onEdit?: (opp: Opportunity) => void;
 }
 
 const formatter = new Intl.NumberFormat("en-KE", {
@@ -35,25 +36,27 @@ function getStageBadgeVariant(stage: Stage) {
   }
 }
 
-export function PipelineView({ opportunities }: PipelineViewProps) {
+export function PipelineView({ opportunities, onEdit }: PipelineViewProps) {
   return (
     <div className="w-full overflow-x-auto rounded-md border bg-card">
       <Table className="min-w-[800px]">
         <TableHeader>
           <TableRow>
             <TableHead>Client</TableHead>
+            <TableHead>Contact</TableHead>
             <TableHead>Category</TableHead>
             <TableHead>Product</TableHead>
             <TableHead>Stage</TableHead>
             <TableHead className="text-right">Premium</TableHead>
             <TableHead>Date</TableHead>
+            <TableHead>Comment</TableHead>
             <TableHead className="text-right">Actions</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {opportunities.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={7} className="text-center">
+              <TableCell colSpan={9} className="text-center">
                 No opportunities found.
               </TableCell>
             </TableRow>
@@ -61,6 +64,7 @@ export function PipelineView({ opportunities }: PipelineViewProps) {
             opportunities.map((opp) => (
               <TableRow key={opp.id}>
                 <TableCell className="font-medium">{opp.client_name}</TableCell>
+                <TableCell>{opp.contact_person || "-"}</TableCell>
                 <TableCell>{opp.category}</TableCell>
                 <TableCell>{opp.product.replace(/_/g, " ")}</TableCell>
                 <TableCell>
@@ -74,9 +78,11 @@ export function PipelineView({ opportunities }: PipelineViewProps) {
                 <TableCell>
                   {new Date(opp.updated_at).toLocaleDateString()}
                 </TableCell>
+                <TableCell className="max-w-[150px] truncate" title={opp.latest_comment || ""}>
+                  {opp.latest_comment || "-"}
+                </TableCell>
                 <TableCell className="text-right">
-                  {/* Conceptual placeholder: clicking this would open a dialog with OpportunityForm */}
-                  <Button variant="ghost" size="sm">
+                  <Button variant="ghost" size="sm" onClick={() => onEdit?.(opp)}>
                     Edit
                   </Button>
                 </TableCell>

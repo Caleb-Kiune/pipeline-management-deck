@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -45,6 +46,21 @@ export function OpportunityForm({ initialData, onSuccess }: OpportunityFormProps
       latest_comment: "",
     },
   });
+
+  useEffect(() => {
+    if (initialData) {
+      form.reset(initialData);
+    } else {
+      form.reset({
+        client_name: "",
+        contact_person: "",
+        product: Product.COOP_CARE,
+        expected_premium: 0,
+        stage: Stage.PROSPECT,
+        latest_comment: "",
+      });
+    }
+  }, [initialData, form]);
 
   async function onSubmit(data: OpportunityFormValues) {
     try {
@@ -123,7 +139,14 @@ export function OpportunityForm({ initialData, onSuccess }: OpportunityFormProps
             <FormItem>
               <FormLabel>Expected Premium</FormLabel>
               <FormControl>
-                <Input type="number" placeholder="0" {...field} onChange={e => field.onChange(e.target.valueAsNumber || 0)} />
+                <Input 
+                  type="number" 
+                  placeholder="0" 
+                  {...field} 
+                  value={field.value || ""} 
+                  onChange={e => field.onChange(e.target.value)} 
+                  onWheel={e => e.currentTarget.blur()}
+                />
               </FormControl>
               <FormMessage />
             </FormItem>

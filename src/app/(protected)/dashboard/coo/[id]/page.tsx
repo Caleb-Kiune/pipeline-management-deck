@@ -132,16 +132,18 @@ export default async function CooDashboardPage(props: { params: Promise<{ id: st
             <TableHeader>
               <TableRow>
                 <TableHead>Client Name</TableHead>
+                <TableHead>Contact</TableHead>
                 <TableHead>Category</TableHead>
                 <TableHead>Product</TableHead>
                 <TableHead>Stage</TableHead>
                 <TableHead className="text-right">Expected Premium</TableHead>
+                <TableHead>Comment</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {opportunities.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={5} className="text-center py-6 text-muted-foreground">
+                  <TableCell colSpan={7} className="text-center py-6 text-muted-foreground">
                     No opportunities found for this period.
                   </TableCell>
                 </TableRow>
@@ -149,11 +151,15 @@ export default async function CooDashboardPage(props: { params: Promise<{ id: st
                 opportunities.map((opp) => (
                   <TableRow key={opp.id}>
                     <TableCell className="font-medium">{opp.client_name}</TableCell>
+                    <TableCell>{opp.contact_person || "-"}</TableCell>
                     <TableCell>{opp.category}</TableCell>
                     <TableCell>{opp.product.replace(/_/g, " ")}</TableCell>
                     <TableCell>{opp.stage}</TableCell>
                     <TableCell className="text-right font-medium">
                       {formatter.format(opp.expected_premium)}
+                    </TableCell>
+                    <TableCell className="max-w-[150px] truncate" title={opp.latest_comment || ""}>
+                      {opp.latest_comment || "-"}
                     </TableCell>
                   </TableRow>
                 ))
