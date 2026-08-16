@@ -1,4 +1,5 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
+import { Target, TrendingUp, BarChart3, Award } from "lucide-react";
 
 interface CompanyKPIsProps {
   totalTarget: number;
@@ -18,40 +19,50 @@ export function CompanyKPIs({
     currency: "KES",
   });
 
+  const kpis = [
+    {
+      label: "Total Target",
+      value: formatter.format(totalTarget),
+      icon: Target,
+      accent: "border-l-gray-400",
+    },
+    {
+      label: "Total Closed",
+      value: formatter.format(totalClosed),
+      icon: TrendingUp,
+      accent: "border-l-emerald-500",
+    },
+    {
+      label: "Total Pipeline",
+      value: formatter.format(totalPipeline),
+      icon: BarChart3,
+      accent: "border-l-amber-500",
+    },
+    {
+      label: "Overall Achievement",
+      value: `${overallAchievement.toFixed(1)}%`,
+      icon: Award,
+      accent: "border-l-primary",
+    },
+  ];
+
   return (
-    <div className="grid gap-4 md:grid-cols-4 lg:grid-cols-4">
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">Total Target</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="text-2xl font-bold">{formatter.format(totalTarget)}</div>
-        </CardContent>
-      </Card>
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">Total Closed</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="text-2xl font-bold">{formatter.format(totalClosed)}</div>
-        </CardContent>
-      </Card>
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">Total Pipeline</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="text-2xl font-bold">{formatter.format(totalPipeline)}</div>
-        </CardContent>
-      </Card>
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">Overall Achievement</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="text-2xl font-bold">{overallAchievement.toFixed(2)}%</div>
-        </CardContent>
-      </Card>
+    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      {kpis.map((kpi) => (
+        <Card key={kpi.label} className={`border-l-4 ${kpi.accent}`}>
+          <CardContent className="p-5">
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                {kpi.label}
+              </span>
+              <kpi.icon className="h-4 w-4 text-muted-foreground/60" />
+            </div>
+            <div className="text-2xl font-bold tabular-nums text-foreground">
+              {kpi.value}
+            </div>
+          </CardContent>
+        </Card>
+      ))}
     </div>
   );
 }

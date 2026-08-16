@@ -7,6 +7,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { EmptyState } from "@/components/ui/empty-state";
 import { COODashboardStats } from "../actions/dashboard.queries";
 
 interface COOPerformanceTableProps {
@@ -35,8 +36,11 @@ export function COOPerformanceTable({ performanceData }: COOPerformanceTableProp
         <TableBody>
           {performanceData.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={6} className="text-center">
-                No COO data found.
+              <TableCell colSpan={6} className="h-48">
+                <EmptyState 
+                  title="No COO data found" 
+                  description="There is no performance data to display for this period."
+                />
               </TableCell>
             </TableRow>
           ) : (

@@ -67,7 +67,7 @@ export function RegisterCooForm({ branches }: { branches: Branch[] }) {
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+      <form onSubmit={form.handleSubmit(onSubmit)} className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-5">
         <FormField
           control={form.control}
           name="name"
@@ -152,16 +152,18 @@ export function RegisterCooForm({ branches }: { branches: Branch[] }) {
           )}
         />
 
-        <Button type="submit" disabled={isSubmitting} className="w-full">
-          {isSubmitting ? (
-            <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Registering...
-            </>
-          ) : (
-            "Register COO"
-          )}
-        </Button>
+        <div className="md:col-span-2">
+          <Button type="submit" disabled={isSubmitting} className="w-full">
+            {isSubmitting ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Registering...
+              </>
+            ) : (
+              "Register COO"
+            )}
+          </Button>
+        </div>
       </form>
     </Form>
   );

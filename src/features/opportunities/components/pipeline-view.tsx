@@ -9,6 +9,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { EmptyState } from "@/components/ui/empty-state";
 import { Button } from "@/components/ui/button";
 import { Stage } from "@prisma/client";
 
@@ -25,15 +26,15 @@ const formatter = new Intl.NumberFormat("en-KE", {
 function getStageBadgeVariant(stage: Stage) {
   switch (stage) {
     case Stage.CLOSED:
-      return "default";
+      return "success" as const;
     case Stage.PROSPECT:
-      return "secondary";
+      return "info" as const;
     case Stage.QUOTED:
-      return "outline";
+      return "warning" as const;
     case Stage.LOST:
-      return "destructive";
+      return "destructive" as const;
     default:
-      return "default";
+      return "secondary" as const;
   }
 }
 
@@ -56,8 +57,11 @@ export function PipelineView({ opportunities, onEdit }: PipelineViewProps) {
         <TableBody>
           {opportunities.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={8} className="text-center">
-                No opportunities found.
+              <TableCell colSpan={8} className="h-48">
+                <EmptyState 
+                  title="No opportunities found" 
+                  description="You have not added any opportunities to your pipeline yet."
+                />
               </TableCell>
             </TableRow>
           ) : (
