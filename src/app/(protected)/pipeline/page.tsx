@@ -1,12 +1,11 @@
 import { headers } from "next/headers";
 import { auth } from "@/features/auth/lib/auth";
 import { redirect } from "next/navigation";
-import { PrismaClient, PeriodStatus } from "@prisma/client";
+import { PeriodStatus } from "@prisma/client";
+import { prisma } from "@/lib/db";
 import { getCOOPipeline, getCOOKPIs } from "@/features/opportunities/actions/opportunity.queries";
 import { KPICards } from "@/features/opportunities/components/kpi-cards";
 import { PipelineWorkspace } from "@/features/opportunities/components/pipeline-workspace";
-
-const prisma = new PrismaClient();
 
 export default async function PipelinePage() {
   const session = await auth.api.getSession({

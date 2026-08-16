@@ -1,10 +1,10 @@
 import { headers } from "next/headers";
 import { auth } from "@/features/auth/lib/auth";
 import { redirect } from "next/navigation";
-import { PrismaClient, PeriodStatus } from "@prisma/client";
+import { PeriodStatus } from "@prisma/client";
+import { prisma } from "@/lib/db";
 import { DashboardView } from "@/features/dashboard/components/dashboard-view";
 
-const prisma = new PrismaClient();
 type SearchParams = Promise<{ [key: string]: string | string[] | undefined }>;
 
 export default async function DashboardPage(props: { searchParams: SearchParams }) {

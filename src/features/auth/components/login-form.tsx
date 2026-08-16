@@ -74,10 +74,6 @@ export function LoginForm() {
           {loading ? "Signing in..." : "Sign In"}
         </Button>
       </form>
-      <div className="text-center text-sm text-muted-foreground p-4 bg-muted rounded-md">
-        <p>Use <strong>jacob.mwangi@example.com</strong> / <strong>password123</strong> to test COO view.</p>
-        <p className="mt-2">Use <strong>management@example.com</strong> / <strong>password123</strong> to test Dashboard view.</p>
-      </div>
     </div>
   );
 }

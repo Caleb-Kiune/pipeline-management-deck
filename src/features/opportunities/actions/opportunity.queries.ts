@@ -1,8 +1,7 @@
 "use server";
 
-import { PrismaClient, Stage, Opportunity } from "@prisma/client";
-
-const prisma = new PrismaClient();
+import { Stage, Opportunity } from "@prisma/client";
+import { prisma } from "@/lib/db";
 
 export async function getCOOPipeline(userId: string, periodId: string): Promise<Opportunity[]> {
   const opportunities = await prisma.opportunity.findMany({

@@ -1,8 +1,7 @@
 "use server";
 
-import { PrismaClient, Category, Role, Stage } from "@prisma/client";
-
-const prisma = new PrismaClient();
+import { Category, Role, Stage } from "@prisma/client";
+import { prisma } from "@/lib/db";
 
 export interface COODashboardStats {
   id: string;

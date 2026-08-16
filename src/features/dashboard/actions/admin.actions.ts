@@ -4,6 +4,14 @@ import { auth } from "@/features/auth/lib/auth";
 import { headers } from "next/headers";
 import { PeriodStatus } from "@prisma/client";
 import { prisma } from "@/lib/db";
+import { z } from "zod";
+
+const createCooSchema = z.object({
+  email: z.string().email(),
+  password: z.string().min(8),
+  name: z.string().min(1),
+  branch_id: z.string().optional(),
+});
 
 // Ensure only MANAGEMENT can perform these actions
 async function verifyManagementRole() {
@@ -18,16 +26,21 @@ async function verifyManagementRole() {
 export async function createCoo(data: any) {
   await verifyManagementRole();
 
+  const parsed = createCooSchema.safeParse(data);
+  if (!parsed.success) {
+    throw new Error("Invalid payload data for COO");
+  }
+
   // CRITICAL: By passing a blank `Headers` object instead of the Next.js `headers()`,
   // Better Auth will process the signup server-side without injecting the new session 
   // cookies into the current admin's browser response.
   const res = await auth.api.signUpEmail({
     body: {
-      email: data.email,
-      password: data.password,
-      name: data.name,
+      email: parsed.data.email,
+      password: parsed.data.password,
+      name: parsed.data.name,
       role: "COO",
-      branch_id: data.branch_id,
+      branch_id: parsed.data.branch_id,
     },
     headers: new Headers(), 
   });

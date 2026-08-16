@@ -1,13 +1,12 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { PrismaClient, Prisma, Stage, PeriodStatus } from "@prisma/client";
+import { Prisma, Stage, PeriodStatus } from "@prisma/client";
 import { createOpportunitySchema, updateOpportunitySchema } from "../schemas/opportunity.schema";
 import { z } from "zod";
 import { auth } from "@/features/auth/lib/auth";
 import { headers } from "next/headers";
-
-const prisma = new PrismaClient();
+import { prisma } from "@/lib/db";
 
 export async function createOpportunity(
   data: z.infer<typeof createOpportunitySchema>
@@ -58,6 +57,14 @@ export async function updateOpportunity(
   id: string,
   data: z.infer<typeof updateOpportunitySchema>
 ) {
+  const session = await auth.api.getSession({
+    headers: await headers(),
+  });
+  
+  if (!session) {
+    throw new Error("Unauthorized");
+  }
+
   const parsed = updateOpportunitySchema.safeParse({ ...data, id });
   if (!parsed.success) {
     throw new Error("Invalid update data");
@@ -65,11 +72,15 @@ export async function updateOpportunity(
 
   const existingOpportunity = await prisma.opportunity.findUnique({
     where: { id },
-    select: { stage: true },
+    select: { stage: true, user_id: true },
   });
 
   if (!existingOpportunity) {
     throw new Error("Opportunity not found");
+  }
+
+  if (existingOpportunity.user_id !== session.user.id) {
+    throw new Error("Forbidden: You do not own this opportunity");
   }
 
   const updateData: Record<string, any> = { ...parsed.data };
@@ -103,6 +114,6 @@ export async function updateOpportunity(
     data: updateData,
   });
 
-  revalidatePath("/test");
+  revalidatePath("/pipeline");
   return opportunity;
 }
