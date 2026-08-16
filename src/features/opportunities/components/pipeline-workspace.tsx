@@ -6,6 +6,7 @@ import { PipelineView } from "./pipeline-view";
 import { OpportunityForm } from "./opportunity-form";
 import { Button } from "@/components/ui/button";
 import { Plus, X } from "lucide-react";
+import { CollapsibleSection } from "@/components/ui/collapsible-section";
 
 interface PipelineWorkspaceProps {
   opportunities: Opportunity[];
@@ -66,14 +67,12 @@ export function PipelineWorkspace({ opportunities }: PipelineWorkspaceProps) {
         )}
 
         <div className="space-y-8">
-          <div>
-            <h3 className="text-lg font-medium mb-4">Medical Opportunities</h3>
+          <CollapsibleSection title="Medical Opportunities" defaultOpen={true}>
             <PipelineView opportunities={opportunities.filter((opp) => opp.product === "COOP_CARE")} onEdit={handleEdit} />
-          </div>
-          <div>
-            <h3 className="text-lg font-medium mb-4">Non-Medical Opportunities</h3>
+          </CollapsibleSection>
+          <CollapsibleSection title="Non-Medical Opportunities" defaultOpen={true}>
             <PipelineView opportunities={opportunities.filter((opp) => opp.product !== "COOP_CARE")} onEdit={handleEdit} />
-          </div>
+          </CollapsibleSection>
         </div>
       </section>
     </div>

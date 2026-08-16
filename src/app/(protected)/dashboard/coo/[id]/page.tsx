@@ -12,6 +12,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { CollapsibleSection } from "@/components/ui/collapsible-section";
+import { formatMonthYear } from "@/lib/utils";
 
 export default async function CooDashboardPage(props: { params: Promise<{ id: string }> }) {
   const session = await auth.api.getSession({ headers: await headers() });
@@ -126,19 +128,18 @@ export default async function CooDashboardPage(props: { params: Promise<{ id: st
       </div>
 
       <div className="space-y-8">
-        <div className="space-y-4">
-          <h2 className="text-2xl font-semibold">Medical Opportunities</h2>
-          <div className="rounded-md border bg-card overflow-hidden">
-            <Table>
+        <CollapsibleSection title="Medical Opportunities" defaultOpen={true}>
+          <div className="w-full overflow-x-auto rounded-md border bg-card">
+            <Table className="min-w-[800px]">
               <TableHeader>
                 <TableRow>
-                  <TableHead>Product</TableHead>
-                  <TableHead>Prospect</TableHead>
-                  <TableHead>Contact Person</TableHead>
-                  <TableHead className="text-right">Expected Premium</TableHead>
-                  <TableHead>Expected Closure Month</TableHead>
-                  <TableHead>Current Status</TableHead>
-                  <TableHead>Comments</TableHead>
+                  <TableHead className="whitespace-nowrap">Product</TableHead>
+                  <TableHead className="min-w-[200px]">Prospect</TableHead>
+                  <TableHead className="min-w-[150px]">Contact Person</TableHead>
+                  <TableHead className="text-right whitespace-nowrap">Expected Premium</TableHead>
+                  <TableHead className="whitespace-nowrap">Expected Closure</TableHead>
+                  <TableHead className="whitespace-nowrap">Current Status</TableHead>
+                  <TableHead className="min-w-[200px]">Comments</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -151,15 +152,15 @@ export default async function CooDashboardPage(props: { params: Promise<{ id: st
                 ) : (
                   medOpps.map((opp) => (
                     <TableRow key={opp.id}>
-                      <TableCell>{opp.product.replace(/_/g, " ")}</TableCell>
+                      <TableCell className="whitespace-nowrap">{opp.product.replace(/_/g, " ")}</TableCell>
                       <TableCell className="font-medium">{opp.client_name}</TableCell>
                       <TableCell>{opp.contact_person || "-"}</TableCell>
-                      <TableCell className="text-right font-medium">
+                      <TableCell className="text-right font-medium whitespace-nowrap">
                         {formatter.format(opp.expected_premium)}
                       </TableCell>
-                      <TableCell>{opp.expected_closure_month}</TableCell>
-                      <TableCell>{opp.stage}</TableCell>
-                      <TableCell className="max-w-[150px] truncate" title={opp.latest_comment || ""}>
+                      <TableCell className="whitespace-nowrap">{formatMonthYear(opp.expected_closure_month)}</TableCell>
+                      <TableCell className="whitespace-nowrap">{opp.stage}</TableCell>
+                      <TableCell className="max-w-[250px] truncate" title={opp.latest_comment || ""}>
                         {opp.latest_comment || "-"}
                       </TableCell>
                     </TableRow>
@@ -168,21 +169,20 @@ export default async function CooDashboardPage(props: { params: Promise<{ id: st
               </TableBody>
             </Table>
           </div>
-        </div>
+        </CollapsibleSection>
 
-        <div className="space-y-4">
-          <h2 className="text-2xl font-semibold">Non-Medical Opportunities</h2>
-          <div className="rounded-md border bg-card overflow-hidden">
-            <Table>
+        <CollapsibleSection title="Non-Medical Opportunities" defaultOpen={true}>
+          <div className="w-full overflow-x-auto rounded-md border bg-card">
+            <Table className="min-w-[800px]">
               <TableHeader>
                 <TableRow>
-                  <TableHead>Product</TableHead>
-                  <TableHead>Prospect</TableHead>
-                  <TableHead>Contact Person</TableHead>
-                  <TableHead className="text-right">Expected Premium</TableHead>
-                  <TableHead>Expected Closure Month</TableHead>
-                  <TableHead>Current Status</TableHead>
-                  <TableHead>Comments</TableHead>
+                  <TableHead className="whitespace-nowrap">Product</TableHead>
+                  <TableHead className="min-w-[200px]">Prospect</TableHead>
+                  <TableHead className="min-w-[150px]">Contact Person</TableHead>
+                  <TableHead className="text-right whitespace-nowrap">Expected Premium</TableHead>
+                  <TableHead className="whitespace-nowrap">Expected Closure</TableHead>
+                  <TableHead className="whitespace-nowrap">Current Status</TableHead>
+                  <TableHead className="min-w-[200px]">Comments</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -195,15 +195,15 @@ export default async function CooDashboardPage(props: { params: Promise<{ id: st
                 ) : (
                   nonMedOpps.map((opp) => (
                     <TableRow key={opp.id}>
-                      <TableCell>{opp.product.replace(/_/g, " ")}</TableCell>
+                      <TableCell className="whitespace-nowrap">{opp.product.replace(/_/g, " ")}</TableCell>
                       <TableCell className="font-medium">{opp.client_name}</TableCell>
                       <TableCell>{opp.contact_person || "-"}</TableCell>
-                      <TableCell className="text-right font-medium">
+                      <TableCell className="text-right font-medium whitespace-nowrap">
                         {formatter.format(opp.expected_premium)}
                       </TableCell>
-                      <TableCell>{opp.expected_closure_month}</TableCell>
-                      <TableCell>{opp.stage}</TableCell>
-                      <TableCell className="max-w-[150px] truncate" title={opp.latest_comment || ""}>
+                      <TableCell className="whitespace-nowrap">{formatMonthYear(opp.expected_closure_month)}</TableCell>
+                      <TableCell className="whitespace-nowrap">{opp.stage}</TableCell>
+                      <TableCell className="max-w-[250px] truncate" title={opp.latest_comment || ""}>
                         {opp.latest_comment || "-"}
                       </TableCell>
                     </TableRow>
@@ -212,7 +212,7 @@ export default async function CooDashboardPage(props: { params: Promise<{ id: st
               </TableBody>
             </Table>
           </div>
-        </div>
+        </CollapsibleSection>
       </div>
     </div>
   );

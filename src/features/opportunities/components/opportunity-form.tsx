@@ -80,7 +80,7 @@ export function OpportunityForm({ initialData, onSuccess }: OpportunityFormProps
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+      <form onSubmit={form.handleSubmit(onSubmit)} className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <FormField
           control={form.control}
           name="client_name"
@@ -199,7 +199,7 @@ export function OpportunityForm({ initialData, onSuccess }: OpportunityFormProps
           control={form.control}
           name="latest_comment"
           render={({ field }) => (
-            <FormItem>
+            <FormItem className="md:col-span-2">
               <FormLabel>Latest Comment (Optional)</FormLabel>
               <FormControl>
                 <Textarea placeholder="Add a comment..." {...field} value={field.value || ""} />
@@ -209,7 +209,7 @@ export function OpportunityForm({ initialData, onSuccess }: OpportunityFormProps
           )}
         />
 
-        <Button type="submit" className="w-full">Save Opportunity</Button>
+        <Button type="submit" className="w-full md:col-span-2 mt-4">Save Opportunity</Button>
       </form>
     </Form>
   );

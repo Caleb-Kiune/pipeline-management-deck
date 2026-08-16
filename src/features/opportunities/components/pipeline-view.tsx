@@ -1,4 +1,5 @@
 import { Opportunity } from "@prisma/client";
+import { formatMonthYear } from "@/lib/utils";
 import {
   Table,
   TableBody,
@@ -42,14 +43,14 @@ export function PipelineView({ opportunities, onEdit }: PipelineViewProps) {
       <Table className="min-w-[800px]">
         <TableHeader>
           <TableRow>
-            <TableHead>Product</TableHead>
-            <TableHead>Prospect</TableHead>
-            <TableHead>Contact Person</TableHead>
-            <TableHead className="text-right">Expected Premium</TableHead>
-            <TableHead>Expected Closure Month</TableHead>
-            <TableHead>Current Status</TableHead>
-            <TableHead>Comments</TableHead>
-            <TableHead className="text-right">Actions</TableHead>
+            <TableHead className="whitespace-nowrap">Product</TableHead>
+            <TableHead className="min-w-[200px]">Prospect</TableHead>
+            <TableHead className="min-w-[150px]">Contact Person</TableHead>
+            <TableHead className="text-right whitespace-nowrap">Expected Premium</TableHead>
+            <TableHead className="whitespace-nowrap">Expected Closure</TableHead>
+            <TableHead className="whitespace-nowrap">Current Status</TableHead>
+            <TableHead className="min-w-[200px]">Comments</TableHead>
+            <TableHead className="text-right whitespace-nowrap">Actions</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -62,19 +63,19 @@ export function PipelineView({ opportunities, onEdit }: PipelineViewProps) {
           ) : (
             opportunities.map((opp) => (
               <TableRow key={opp.id}>
-                <TableCell>{opp.product.replace(/_/g, " ")}</TableCell>
+                <TableCell className="whitespace-nowrap">{opp.product.replace(/_/g, " ")}</TableCell>
                 <TableCell className="font-medium">{opp.client_name}</TableCell>
                 <TableCell>{opp.contact_person || "-"}</TableCell>
-                <TableCell className="text-right">
+                <TableCell className="text-right whitespace-nowrap">
                   {formatter.format(opp.expected_premium)}
                 </TableCell>
-                <TableCell>{opp.expected_closure_month}</TableCell>
-                <TableCell>
+                <TableCell className="whitespace-nowrap">{formatMonthYear(opp.expected_closure_month)}</TableCell>
+                <TableCell className="whitespace-nowrap">
                   <Badge variant={getStageBadgeVariant(opp.stage)}>
                     {opp.stage}
                   </Badge>
                 </TableCell>
-                <TableCell className="max-w-[150px] truncate" title={opp.latest_comment || ""}>
+                <TableCell className="max-w-[250px] truncate" title={opp.latest_comment || ""}>
                   {opp.latest_comment || "-"}
                 </TableCell>
                 <TableCell className="text-right">
