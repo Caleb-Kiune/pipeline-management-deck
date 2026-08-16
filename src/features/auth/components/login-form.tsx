@@ -6,6 +6,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { authClient } from "../lib/auth-client";
+import { PasswordInput } from "@/components/ui/password-input";
+import { Loader2 } from "lucide-react";
+
+import { checkUserStatus } from "../actions/auth.actions";
 
 export function LoginForm() {
   const [email, setEmail] = useState("");
@@ -19,6 +23,17 @@ export function LoginForm() {
     setError("");
     setLoading(true);
 
+    try {
+      const statusRes = await checkUserStatus(email);
+      if (statusRes.success && statusRes.exists && !statusRes.isActive) {
+        setError("Your account has been deactivated. Please contact management.");
+        setLoading(false);
+        return;
+      }
+    } catch (err) {
+      console.error("Failed to check user status", err);
+    }
+
     const { data, error } = await authClient.signIn.email({
       email,
       password,
@@ -26,7 +41,11 @@ export function LoginForm() {
 
     if (error) {
       setLoading(false);
-      setError(error.message || "Login failed");
+      if (error.code === "USER_DEACTIVATED" || error.message?.toLowerCase().includes("deactivated")) {
+        setError("Your account has been deactivated. Please contact management.");
+      } else {
+        setError(error.message || "Login failed");
+      }
     } else {
       const { data: session } = await authClient.getSession();
       setLoading(false);
@@ -62,16 +81,22 @@ export function LoginForm() {
         </div>
         <div className="space-y-2">
           <Label htmlFor="password">Password</Label>
-          <Input 
+          <PasswordInput 
             id="password" 
-            type="password" 
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required 
           />
         </div>
         <Button type="submit" className="w-full" disabled={loading}>
-          {loading ? "Signing in..." : "Sign In"}
+          {loading ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Authenticating...
+            </>
+          ) : (
+            "Sign In"
+          )}
         </Button>
       </form>
     </div>

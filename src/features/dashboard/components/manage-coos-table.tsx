@@ -10,8 +10,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-
-import { MoreHorizontal } from "lucide-react";
+import { PasswordInput } from "@/components/ui/password-input";
+import { toast } from "sonner";
+import { MoreHorizontal, Loader2 } from "lucide-react";
 
 export function ManageCoosTable({ coos, branches }: { coos: (User & { branch?: Branch | null, targets?: Target[] })[], branches: Branch[] }) {
   const [editingCoo, setEditingCoo] = useState<User | null>(null);
@@ -21,8 +22,8 @@ export function ManageCoosTable({ coos, branches }: { coos: (User & { branch?: B
     name: "", 
     email: "", 
     branch: "",
-    medicalTarget: "" as number | "",
-    nonMedicalTarget: "" as number | "",
+    medicalTarget: "" as number | "" | undefined,
+    nonMedicalTarget: "" as number | "" | undefined,
     password: "" 
   });
   const [loading, setLoading] = useState(false);
@@ -43,29 +44,27 @@ export function ManageCoosTable({ coos, branches }: { coos: (User & { branch?: B
   const handleEditSubmit = async () => {
     if (!editingCoo) return;
     setLoading(true);
-    
-    // Convert empty strings back to 0 or block submission? 
-    // We agreed it should be strictly required
-    if (editData.medicalTarget === "" || editData.nonMedicalTarget === "") {
-      alert("Please provide both Medical and Non-Medical targets.");
-      setLoading(false);
-      return;
-    }
 
     try {
-      await editCoo(editingCoo.id, {
+      const res = await editCoo(editingCoo.id, {
         name: editData.name,
         email: editData.email,
         branch: editData.branch,
-        medicalTarget: editData.medicalTarget,
-        nonMedicalTarget: editData.nonMedicalTarget,
+        medicalTarget: editData.medicalTarget === "" ? 0 : editData.medicalTarget,
+        nonMedicalTarget: editData.nonMedicalTarget === "" ? 0 : editData.nonMedicalTarget,
         password: editData.password
       });
-      setEditingCoo(null);
-      window.location.reload(); 
+
+      if (!res.success) {
+        toast.error(res.error || "Failed to edit COO");
+      } else {
+        toast.success(res.message || "COO details updated successfully");
+        setEditingCoo(null);
+        window.location.reload();
+      }
     } catch (error) {
       console.error(error);
-      alert("Failed to edit COO");
+      toast.error("An unexpected error occurred");
     } finally {
       setLoading(false);
     }
@@ -74,11 +73,16 @@ export function ManageCoosTable({ coos, branches }: { coos: (User & { branch?: B
   const handleToggleStatus = async (id: string, currentStatus: boolean) => {
     if (confirm(`Are you sure you want to ${currentStatus ? 'deactivate' : 'activate'} this COO?`)) {
       try {
-        await toggleCooStatus(id, !currentStatus);
-        window.location.reload();
+        const res = await toggleCooStatus(id, !currentStatus);
+        if (!res.success) {
+          toast.error(res.error || "Failed to toggle COO status");
+        } else {
+          toast.success(res.message || "Status toggled successfully");
+          window.location.reload();
+        }
       } catch (e) {
         console.error(e);
-        alert("Failed to toggle COO status");
+        toast.error("An unexpected error occurred");
       }
     }
   };
@@ -86,11 +90,16 @@ export function ManageCoosTable({ coos, branches }: { coos: (User & { branch?: B
   const handleHardDelete = async (id: string) => {
     if (confirm("WARNING: Are you sure you want to completely hard delete this COO? All their performance data will be permanently wiped. This cannot be undone.")) {
       try {
-        await hardDeleteCoo(id);
-        window.location.reload();
+        const res = await hardDeleteCoo(id);
+        if (!res.success) {
+          toast.error(res.error || "Failed to hard delete COO");
+        } else {
+          toast.success(res.message || "COO permanently deleted");
+          window.location.reload();
+        }
       } catch (e) {
         console.error(e);
-        alert("Failed to hard delete COO");
+        toast.error("An unexpected error occurred");
       }
     }
   };
@@ -159,49 +168,58 @@ export function ManageCoosTable({ coos, branches }: { coos: (User & { branch?: B
           <div className="space-y-4 py-4">
             <div className="space-y-2">
               <Label>Name</Label>
-              <Input value={editData.name} onChange={e => setEditData({...editData, name: e.target.value})} />
+              <Input value={editData.name} onChange={e => setEditData({...editData, name: e.target.value})} disabled={loading} />
             </div>
             <div className="space-y-2">
               <Label>Email</Label>
-              <Input type="email" value={editData.email} onChange={e => setEditData({...editData, email: e.target.value})} />
+              <Input type="email" value={editData.email} onChange={e => setEditData({...editData, email: e.target.value})} disabled={loading} />
             </div>
             <div className="space-y-2">
               <Label>Branch</Label>
-              <Input value={editData.branch} onChange={e => setEditData({...editData, branch: e.target.value})} placeholder="e.g. Nairobi CBD" />
+              <Input value={editData.branch} onChange={e => setEditData({...editData, branch: e.target.value})} placeholder="e.g. Nairobi CBD" disabled={loading} />
             </div>
             
             <div className="space-y-2">
-              <Label>Medical Target</Label>
+              <Label>Medical Target (Optional)</Label>
               <Input 
                 type="number" 
-                required
                 value={editData.medicalTarget ?? ""} 
                 onChange={e => setEditData({ ...editData, medicalTarget: e.target.value === "" ? "" : Number(e.target.value) })} 
+                disabled={loading}
               />
             </div>
             <div className="space-y-2">
-              <Label>Non-Medical Target</Label>
+              <Label>Non-Medical Target (Optional)</Label>
               <Input 
                 type="number" 
-                required
                 value={editData.nonMedicalTarget ?? ""} 
                 onChange={e => setEditData({ ...editData, nonMedicalTarget: e.target.value === "" ? "" : Number(e.target.value) })} 
+                disabled={loading}
               />
             </div>
             
             <div className="space-y-2 pt-2 border-t mt-4">
               <Label>Change Password (Optional)</Label>
-              <Input 
-                type="password" 
+              <PasswordInput 
                 placeholder="Leave blank to keep current password" 
                 value={editData.password} 
                 onChange={e => setEditData({...editData, password: e.target.value})} 
+                disabled={loading}
               />
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setEditingCoo(null)}>Cancel</Button>
-            <Button onClick={handleEditSubmit} disabled={loading}>{loading ? "Saving..." : "Save Changes"}</Button>
+            <Button variant="outline" onClick={() => setEditingCoo(null)} disabled={loading}>Cancel</Button>
+            <Button onClick={handleEditSubmit} disabled={loading}>
+              {loading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Saving...
+                </>
+              ) : (
+                "Save Changes"
+              )}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

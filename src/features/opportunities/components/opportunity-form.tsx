@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -26,6 +26,8 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { createOpportunity, updateOpportunity } from "../actions/opportunity.actions";
+import { toast } from "sonner";
+import { Loader2 } from "lucide-react";
 
 type OpportunityFormValues = z.infer<typeof opportunityFormSchema>;
 
@@ -35,6 +37,8 @@ interface OpportunityFormProps {
 }
 
 export function OpportunityForm({ initialData, onSuccess }: OpportunityFormProps) {
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  
   const form = useForm<OpportunityFormValues>({
     resolver: zodResolver(opportunityFormSchema) as any,
     defaultValues: initialData || {
@@ -65,16 +69,26 @@ export function OpportunityForm({ initialData, onSuccess }: OpportunityFormProps
   }, [initialData, form]);
 
   async function onSubmit(data: OpportunityFormValues) {
+    setIsSubmitting(true);
     try {
+      let res;
       if (initialData?.id) {
-        await updateOpportunity(initialData.id, { ...data, id: initialData.id });
+        res = await updateOpportunity(initialData.id, { ...data, id: initialData.id });
       } else {
-        await createOpportunity(data);
+        res = await createOpportunity(data);
       }
-      onSuccess?.();
+      
+      if (!res.success) {
+        toast.error(res.error || "Failed to save opportunity");
+      } else {
+        toast.success(res.message || "Opportunity saved successfully");
+        onSuccess?.();
+      }
     } catch (error) {
       console.error("Failed to save opportunity", error);
-      // In a real implementation, you might show a toast here
+      toast.error("An unexpected error occurred");
+    } finally {
+      setIsSubmitting(false);
     }
   }
 
@@ -88,7 +102,7 @@ export function OpportunityForm({ initialData, onSuccess }: OpportunityFormProps
             <FormItem>
               <FormLabel>Client Name</FormLabel>
               <FormControl>
-                <Input placeholder="Enter client name" {...field} />
+                <Input placeholder="Enter client name" disabled={isSubmitting} {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -102,7 +116,7 @@ export function OpportunityForm({ initialData, onSuccess }: OpportunityFormProps
             <FormItem>
               <FormLabel>Contact Person (Optional)</FormLabel>
               <FormControl>
-                <Input placeholder="Enter contact person" {...field} value={field.value || ""} />
+                <Input placeholder="Enter contact person" disabled={isSubmitting} {...field} value={field.value || ""} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -115,7 +129,7 @@ export function OpportunityForm({ initialData, onSuccess }: OpportunityFormProps
           render={({ field }) => (
             <FormItem>
               <FormLabel>Product</FormLabel>
-              <Select onValueChange={field.onChange} value={field.value}>
+              <Select onValueChange={field.onChange} value={field.value} disabled={isSubmitting}>
                 <FormControl>
                   <SelectTrigger>
                     <SelectValue placeholder="Select product" />
@@ -144,6 +158,7 @@ export function OpportunityForm({ initialData, onSuccess }: OpportunityFormProps
                 <Input 
                   type="number" 
                   placeholder="0" 
+                  disabled={isSubmitting}
                   {...field} 
                   value={field.value ?? ""} 
                   onChange={e => field.onChange(e.target.value === "" ? undefined : Number(e.target.value))} 
@@ -162,7 +177,7 @@ export function OpportunityForm({ initialData, onSuccess }: OpportunityFormProps
             <FormItem>
               <FormLabel>Expected Closure Month</FormLabel>
               <FormControl>
-                <Input type="month" {...field} />
+                <Input type="month" disabled={isSubmitting} {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -175,7 +190,7 @@ export function OpportunityForm({ initialData, onSuccess }: OpportunityFormProps
           render={({ field }) => (
             <FormItem>
               <FormLabel>Stage</FormLabel>
-              <Select onValueChange={field.onChange} value={field.value}>
+              <Select onValueChange={field.onChange} value={field.value} disabled={isSubmitting}>
                 <FormControl>
                   <SelectTrigger>
                     <SelectValue placeholder="Select stage" />
@@ -202,14 +217,23 @@ export function OpportunityForm({ initialData, onSuccess }: OpportunityFormProps
             <FormItem className="md:col-span-2">
               <FormLabel>Latest Comment (Optional)</FormLabel>
               <FormControl>
-                <Textarea placeholder="Add a comment..." {...field} value={field.value || ""} />
+                <Textarea placeholder="Add a comment..." disabled={isSubmitting} {...field} value={field.value || ""} />
               </FormControl>
               <FormMessage />
             </FormItem>
           )}
         />
 
-        <Button type="submit" className="w-full md:col-span-2 mt-4">Save Opportunity</Button>
+        <Button type="submit" className="w-full md:col-span-2 mt-4" disabled={isSubmitting}>
+          {isSubmitting ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Saving...
+            </>
+          ) : (
+            "Save Opportunity"
+          )}
+        </Button>
       </form>
     </Form>
   );
