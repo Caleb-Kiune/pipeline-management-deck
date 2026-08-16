@@ -27,8 +27,10 @@ export default async function PipelinePage() {
   }
 
   const periodId = activePeriod.id;
-  const kpis = await getCOOKPIs(userId, periodId);
   const pipeline = await getCOOPipeline(userId, periodId);
+  const target = await prisma.target.findUnique({
+    where: { user_id_period_id: { user_id: userId, period_id: periodId } }
+  });
 
   return (
     <div className="container max-w-6xl mx-auto py-10 px-4 space-y-12">
@@ -38,8 +40,7 @@ export default async function PipelinePage() {
       </div>
 
       <section>
-        <h2 className="text-xl font-semibold mb-4">My KPIs</h2>
-        <KPICards pipelineValue={kpis.pipelineValue} reportedClosed={kpis.reportedClosed} />
+        <KPICards opportunities={pipeline} target={target} />
       </section>
 
       <PipelineWorkspace opportunities={pipeline} />

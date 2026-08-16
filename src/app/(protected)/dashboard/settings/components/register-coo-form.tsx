@@ -15,14 +15,22 @@ export function RegisterCooForm({ branches }: { branches: Branch[] }) {
     email: "",
     password: "",
     branch_id: "",
+    medicalTarget: "" as number | "",
+    nonMedicalTarget: "" as number | "",
   });
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
+    if (formData.medicalTarget === "" || formData.nonMedicalTarget === "") {
+      alert("Please provide both Medical and Non-Medical targets.");
+      setLoading(false);
+      return;
+    }
+
     try {
       await createCoo(formData);
-      setFormData({ name: "", email: "", password: "", branch_id: "" });
+      setFormData({ name: "", email: "", password: "", branch_id: "", medicalTarget: "", nonMedicalTarget: "" });
       alert("COO successfully registered");
     } catch (error) {
       console.error(error);
@@ -78,6 +86,26 @@ export function RegisterCooForm({ branches }: { branches: Branch[] }) {
             ))}
           </SelectContent>
         </Select>
+      </div>
+      <div className="space-y-2">
+        <Label>Initial Medical Target</Label>
+        <Input 
+          type="number" 
+          required
+          value={formData.medicalTarget ?? ""} 
+          onChange={e => setFormData({ ...formData, medicalTarget: e.target.value === "" ? "" : Number(e.target.value) })} 
+          placeholder="0" 
+        />
+      </div>
+      <div className="space-y-2">
+        <Label>Initial Non-Medical Target</Label>
+        <Input 
+          type="number" 
+          required
+          value={formData.nonMedicalTarget ?? ""} 
+          onChange={e => setFormData({ ...formData, nonMedicalTarget: e.target.value === "" ? "" : Number(e.target.value) })} 
+          placeholder="0" 
+        />
       </div>
       <Button type="submit" disabled={loading} className="w-full">
         {loading ? "Registering..." : "Register COO"}

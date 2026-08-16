@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { RegisterCooForm } from "./components/register-coo-form";
 import { SetTargetForm } from "./components/set-target-form";
 import { prisma } from "@/lib/db";
+import { ManageCoosTable } from "@/features/dashboard/components/manage-coos-table";
 
 export default async function SettingsPage() {
   const session = await auth.api.getSession({
@@ -15,10 +16,19 @@ export default async function SettingsPage() {
     redirect("/dashboard");
   }
 
+  // Fetch active reporting period
+  const activePeriod = await prisma.reportingPeriod.findFirst({
+    where: { status: "OPEN" },
+  });
+
   // Fetch prerequisites for dropdowns
   const branches = await prisma.branch.findMany();
   const coos = await prisma.user.findMany({
-    where: { role: "COO" }
+    where: { role: "COO", isActive: true },
+    include: {
+      branch: true,
+      targets: activePeriod ? { where: { period_id: activePeriod.id } } : false,
+    },
   });
 
   return (
@@ -41,6 +51,12 @@ export default async function SettingsPage() {
           <SetTargetForm coos={coos} />
         </section>
       </div>
+
+      {/* Form 3: Manage COOs */}
+      <section className="bg-card p-6 rounded-lg border shadow-sm">
+        <h2 className="text-xl font-semibold mb-4">Manage COOs</h2>
+        <ManageCoosTable coos={coos} branches={branches} />
+      </section>
     </div>
   );
 }

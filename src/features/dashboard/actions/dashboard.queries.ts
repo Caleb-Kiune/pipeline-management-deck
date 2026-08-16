@@ -31,6 +31,7 @@ export async function getDashboardStats(
   const coos = await prisma.user.findMany({
     where: {
       role: Role.COO,
+      isActive: true,
     },
     include: {
       branch: true,
@@ -55,7 +56,7 @@ export async function getDashboardStats(
 
   const cooPerformance: COODashboardStats[] = coos.map((coo) => {
     // Target is typically one per period per user
-    const targetValue = coo.targets.reduce((sum, t) => {
+    const targetValue = coo.targets.reduce((sum: number, t: any) => {
       if (categoryFilter === "MEDICAL") return sum + t.medical_target;
       if (categoryFilter === "NON_MEDICAL") return sum + t.non_medical_target;
       return sum + t.medical_target + t.non_medical_target;

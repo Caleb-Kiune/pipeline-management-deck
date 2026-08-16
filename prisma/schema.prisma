@@ -112,6 +112,7 @@ model User {
   image         String?
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
+  isActive      Boolean   @default(true)
 
   branch        Branch?   @relation(fields: [branch_id], references: [id])
 
