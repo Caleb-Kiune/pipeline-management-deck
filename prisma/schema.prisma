@@ -71,7 +71,7 @@ model Target {
   medical_target     Float  @default(0)
   non_medical_target Float  @default(0)
 
-  user   User            @relation(fields: [user_id], references: [id])
+  user   User            @relation(fields: [user_id], references: [id], onDelete: Cascade)
   period ReportingPeriod @relation(fields: [period_id], references: [id])
 
   @@unique([user_id, period_id])
@@ -92,7 +92,7 @@ model Opportunity {
   updated_at       DateTime  @updatedAt
   closed_at        DateTime?
 
-  user   User            @relation(fields: [user_id], references: [id])
+  user   User            @relation(fields: [user_id], references: [id], onDelete: Cascade)
   period ReportingPeriod @relation(fields: [period_id], references: [id])
 }
 

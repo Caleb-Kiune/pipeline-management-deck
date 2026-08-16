@@ -1,5 +1,6 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Opportunity, Target } from "@prisma/client";
+import { CollapsibleSection } from "@/components/ui/collapsible-section";
 
 interface KPICardsProps {
   opportunities: Opportunity[];
@@ -39,89 +40,98 @@ export function KPICards({ opportunities, target }: KPICardsProps) {
   };
 
   return (
-    <Card className="mb-8">
-      <CardHeader>
-        <CardTitle>Month to Date Performance</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-6">
-        {/* Totals */}
-        <div className="grid grid-cols-3 gap-4 border-b pb-4">
-          <div>
-            <p className="text-sm text-muted-foreground">Total Target</p>
-            <p className="text-2xl font-bold">{formatter.format(totalTarget)}</p>
-          </div>
-          <div>
-            <p className="text-sm text-muted-foreground">Total Closed</p>
-            <p className="text-2xl font-bold text-green-600">{formatter.format(totalClosed)}</p>
-          </div>
-          <div>
-            <p className="text-sm text-muted-foreground">% Achieved</p>
-            <p className="text-2xl font-bold text-primary">{calcPercentage(totalClosed, totalTarget)}%</p>
-          </div>
-        </div>
+    <CollapsibleSection title="KPI" defaultOpen={true}>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        
+        {/* Total Card */}
+        <Card className="bg-primary/5 border-primary/20">
+          <CardContent className="p-4 flex flex-col justify-center h-full space-y-2">
+            <h3 className="font-semibold text-primary text-lg border-b border-primary/20 pb-1 mb-1">Total Performance</h3>
+            <div className="flex justify-between text-sm">
+              <span className="text-muted-foreground">Target:</span>
+              <span className="font-medium">{formatter.format(totalTarget)}</span>
+            </div>
+            <div className="flex justify-between text-sm">
+              <span className="text-muted-foreground">Closed:</span>
+              <span className="font-medium text-green-600">{formatter.format(totalClosed)}</span>
+            </div>
+            <div className="flex flex-col items-center justify-center mt-3 p-3 bg-card rounded-md border shadow-sm">
+              <span className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Achieved</span>
+              <span className="text-3xl font-bold text-primary">{calcPercentage(totalClosed, totalTarget)}%</span>
+            </div>
+          </CardContent>
+        </Card>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          {/* Medical Breakdown */}
-          <div className="space-y-4">
-            <h3 className="font-semibold text-lg border-b pb-2">Medical</h3>
-            <div className="flex justify-between items-center">
+        {/* Medical Card */}
+        <Card>
+          <CardContent className="p-4 space-y-2">
+            <h3 className="font-semibold text-lg border-b pb-1 mb-1">Medical</h3>
+            <div className="flex justify-between text-sm">
               <span className="text-muted-foreground">Target:</span>
               <span className="font-medium">{formatter.format(medTarget)}</span>
             </div>
-            <div className="flex justify-between items-center">
-              <span className="text-muted-foreground">Closed (COOP CARE):</span>
+            <div className="flex justify-between text-sm">
+              <span className="text-muted-foreground">Closed:</span>
               <span className="font-medium text-green-600">{formatter.format(medClosed)}</span>
             </div>
-            <div className="flex justify-between items-center">
-              <span className="text-muted-foreground">% Achieved:</span>
-              <span className="font-bold">{calcPercentage(medClosed, medTarget)}%</span>
+            <div className="flex justify-between items-center pt-2 border-t mt-2">
+              <span className="text-sm font-medium text-muted-foreground">Achieved:</span>
+              <span className="font-bold text-lg">{calcPercentage(medClosed, medTarget)}%</span>
             </div>
-          </div>
+          </CardContent>
+        </Card>
 
-          {/* Non-Medical Breakdown */}
-          <div className="space-y-4">
-            <h3 className="font-semibold text-lg border-b pb-2">Non-Medical</h3>
-            <div className="flex justify-between items-center">
+        {/* Non-Medical Total Card */}
+        <Card>
+          <CardContent className="p-4 space-y-2">
+            <h3 className="font-semibold text-lg border-b pb-1 mb-1">Non-Medical</h3>
+            <div className="flex justify-between text-sm">
               <span className="text-muted-foreground">Target:</span>
               <span className="font-medium">{formatter.format(nonMedTarget)}</span>
             </div>
-            <div className="flex justify-between items-center">
-              <span className="text-muted-foreground">Total Closed:</span>
+            <div className="flex justify-between text-sm">
+              <span className="text-muted-foreground">Closed:</span>
               <span className="font-medium text-green-600">{formatter.format(nonMedClosed)}</span>
             </div>
-            <div className="flex justify-between items-center">
-              <span className="text-muted-foreground">% Achieved:</span>
-              <span className="font-bold">{calcPercentage(nonMedClosed, nonMedTarget)}%</span>
+            <div className="flex justify-between items-center pt-2 border-t mt-2">
+              <span className="text-sm font-medium text-muted-foreground">Achieved:</span>
+              <span className="font-bold text-lg">{calcPercentage(nonMedClosed, nonMedTarget)}%</span>
             </div>
-            
-            <div className="pt-2 border-t mt-2">
-              <p className="text-xs text-muted-foreground font-semibold mb-2 uppercase">Sub-Breakdown (Closed)</p>
-              <div className="space-y-1 text-sm">
-                <div className="flex justify-between">
-                  <span>Livestock + Poultry + Pigs:</span>
-                  <span>{formatter.format(livestockClosed)}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>Student PA:</span>
-                  <span>{formatter.format(studentPaClosed)}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>Jikinge:</span>
-                  <span>{formatter.format(jikingeClosed)}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>Biashara Salama:</span>
-                  <span>{formatter.format(biasharaSalamaClosed)}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>GFE:</span>
-                  <span>{formatter.format(gfeClosed)}</span>
-                </div>
+          </CardContent>
+        </Card>
+
+        {/* Non-Medical Breakdown Card */}
+        <Card>
+          <CardContent className="p-4">
+            <h3 className="font-semibold border-b pb-1 mb-2 text-sm text-muted-foreground uppercase tracking-wide">
+              Non-Medical (Closed)
+            </h3>
+            <div className="space-y-2 text-xs">
+              <div className="flex justify-between items-center">
+                <span className="truncate pr-2">Livestock / Poultry</span>
+                <span className="font-medium shrink-0">{formatter.format(livestockClosed)}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="truncate pr-2">Student PA</span>
+                <span className="font-medium shrink-0">{formatter.format(studentPaClosed)}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="truncate pr-2">Jikinge</span>
+                <span className="font-medium shrink-0">{formatter.format(jikingeClosed)}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="truncate pr-2">Biashara Salama</span>
+                <span className="font-medium shrink-0">{formatter.format(biasharaSalamaClosed)}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="truncate pr-2">GFE</span>
+                <span className="font-medium shrink-0">{formatter.format(gfeClosed)}</span>
               </div>
             </div>
-          </div>
-        </div>
-      </CardContent>
-    </Card>
+          </CardContent>
+        </Card>
+
+      </div>
+    </CollapsibleSection>
   );
 }

@@ -4,6 +4,8 @@ import { headers } from "next/headers";
 import { auth } from "@/features/auth/lib/auth";
 import { redirect } from "next/navigation";
 import { LogOutButton } from "@/features/auth/components/logout-button";
+import { Settings } from "lucide-react";
+import { prisma } from "@/lib/db";
 
 export default async function ProtectedLayout({ children }: { children: ReactNode }) {
   const session = await auth.api.getSession({
@@ -11,6 +13,16 @@ export default async function ProtectedLayout({ children }: { children: ReactNod
   });
 
   if (!session) {
+    redirect("/");
+  }
+
+  // Database lookup to enforce deactivation instantly
+  const dbUser = await prisma.user.findUnique({
+    where: { id: session.user.id }
+  });
+
+  if (!dbUser || (dbUser as any).isActive === false) {
+    await prisma.session.deleteMany({ where: { userId: session.user.id } });
     redirect("/");
   }
 
@@ -30,9 +42,15 @@ export default async function ProtectedLayout({ children }: { children: ReactNod
                 </Link>
               )}
               {isManagement && (
-                <Link href="/dashboard" className="text-sm font-medium hover:text-primary transition-colors">
-                  Dashboard
-                </Link>
+                <>
+                  <Link href="/dashboard" className="text-sm font-medium hover:text-primary transition-colors">
+                    Dashboard
+                  </Link>
+                  <Link href="/dashboard/settings" className="text-sm font-medium hover:text-primary transition-colors flex items-center space-x-1">
+                    <Settings className="w-4 h-4" />
+                    <span>Settings</span>
+                  </Link>
+                </>
               )}
             </nav>
           </div>

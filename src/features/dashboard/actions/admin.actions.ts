@@ -5,13 +5,13 @@ import { headers } from "next/headers";
 import { PeriodStatus, Role } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { z } from "zod";
-import bcrypt from "bcryptjs";
+import { hashPassword } from "better-auth/crypto";
 
 const createCooSchema = z.object({
   email: z.string().email(),
   password: z.string().min(8),
   name: z.string().min(1),
-  branch_id: z.string().optional(),
+  branch: z.string().optional(),
   medicalTarget: z.number().min(0),
   nonMedicalTarget: z.number().min(0),
 });
@@ -19,7 +19,7 @@ const createCooSchema = z.object({
 const editCooSchema = z.object({
   name: z.string().min(1),
   email: z.string().email(),
-  branch_id: z.string().optional(),
+  branch: z.string().optional(),
   medicalTarget: z.number().min(0),
   nonMedicalTarget: z.number().min(0),
   password: z.string().min(8).optional().or(z.literal("")),
@@ -43,6 +43,17 @@ export async function createCoo(data: any) {
     throw new Error("Invalid payload data for COO");
   }
 
+  let branch_id = null;
+  if (parsed.data.branch && parsed.data.branch.trim() !== "") {
+    let branch = await prisma.branch.findFirst({
+      where: { name: { equals: parsed.data.branch.trim(), mode: 'insensitive' } }
+    });
+    if (!branch) {
+      branch = await prisma.branch.create({ data: { name: parsed.data.branch.trim() } });
+    }
+    branch_id = branch.id;
+  }
+
   // CRITICAL: By passing a blank `Headers` object instead of the Next.js `headers()`,
   // Better Auth will process the signup server-side without injecting the new session 
   // cookies into the current admin's browser response.
@@ -52,7 +63,7 @@ export async function createCoo(data: any) {
       password: parsed.data.password,
       name: parsed.data.name,
       role: "COO",
-      branch_id: parsed.data.branch_id,
+      branch_id,
     },
     headers: new Headers(), 
   });
@@ -124,17 +135,28 @@ export async function editCoo(id: string, data: any) {
 
   const validData = parsed.data;
 
+  let branch_id = null;
+  if (validData.branch && validData.branch.trim() !== "") {
+    let branch = await prisma.branch.findFirst({
+      where: { name: { equals: validData.branch.trim(), mode: 'insensitive' } }
+    });
+    if (!branch) {
+      branch = await prisma.branch.create({ data: { name: validData.branch.trim() } });
+    }
+    branch_id = branch.id;
+  }
+
   await prisma.user.update({
     where: { id },
     data: {
       name: validData.name,
       email: validData.email,
-      branch_id: validData.branch_id || null,
+      branch_id,
     }
   });
 
   if (validData.password && validData.password.trim().length > 0) {
-    const hashedPassword = await bcrypt.hash(validData.password, 10);
+    const hashedPassword = await hashPassword(validData.password);
     const account = await prisma.account.findFirst({
       where: { userId: id }
     });
@@ -174,10 +196,17 @@ export async function editCoo(id: string, data: any) {
   }
 }
 
-export async function deleteCoo(id: string) {
+export async function toggleCooStatus(id: string, isActive: boolean) {
   await verifyManagementRole();
   await prisma.user.update({
     where: { id },
-    data: { isActive: false }
+    data: { isActive }
+  });
+}
+
+export async function hardDeleteCoo(id: string) {
+  await verifyManagementRole();
+  await prisma.user.delete({
+    where: { id }
   });
 }

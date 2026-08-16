@@ -14,7 +14,7 @@ export function RegisterCooForm({ branches }: { branches: Branch[] }) {
     name: "",
     email: "",
     password: "",
-    branch_id: "",
+    branch: "",
     medicalTarget: "" as number | "",
     nonMedicalTarget: "" as number | "",
   });
@@ -30,7 +30,7 @@ export function RegisterCooForm({ branches }: { branches: Branch[] }) {
 
     try {
       await createCoo(formData);
-      setFormData({ name: "", email: "", password: "", branch_id: "", medicalTarget: "", nonMedicalTarget: "" });
+      setFormData({ name: "", email: "", password: "", branch: "", medicalTarget: "", nonMedicalTarget: "" });
       alert("COO successfully registered");
     } catch (error) {
       console.error(error);
@@ -73,19 +73,11 @@ export function RegisterCooForm({ branches }: { branches: Branch[] }) {
       </div>
       <div className="space-y-2">
         <Label>Branch</Label>
-        <Select 
-          value={formData.branch_id ?? ""} 
-          onValueChange={val => setFormData({ ...formData, branch_id: val ?? "" })}
-        >
-          <SelectTrigger>
-            <SelectValue placeholder="Select branch" />
-          </SelectTrigger>
-          <SelectContent>
-            {branches.map(b => (
-              <SelectItem key={b.id} value={b.id}>{b.name}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <Input 
+          value={formData.branch} 
+          onChange={e => setFormData({ ...formData, branch: e.target.value })} 
+          placeholder="e.g. Nairobi CBD" 
+        />
       </div>
       <div className="space-y-2">
         <Label>Initial Medical Target</Label>

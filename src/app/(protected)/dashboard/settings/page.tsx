@@ -2,7 +2,6 @@ import { auth } from "@/features/auth/lib/auth";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { RegisterCooForm } from "./components/register-coo-form";
-import { SetTargetForm } from "./components/set-target-form";
 import { prisma } from "@/lib/db";
 import { ManageCoosTable } from "@/features/dashboard/components/manage-coos-table";
 
@@ -24,7 +23,7 @@ export default async function SettingsPage() {
   // Fetch prerequisites for dropdowns
   const branches = await prisma.branch.findMany();
   const coos = await prisma.user.findMany({
-    where: { role: "COO", isActive: true },
+    where: { role: "COO" },
     include: {
       branch: true,
       targets: activePeriod ? { where: { period_id: activePeriod.id } } : false,
@@ -43,12 +42,6 @@ export default async function SettingsPage() {
         <section className="bg-card p-6 rounded-lg border shadow-sm">
           <h2 className="text-xl font-semibold mb-4">Register New COO</h2>
           <RegisterCooForm branches={branches} />
-        </section>
-
-        {/* Form 2: Set COO Targets */}
-        <section className="bg-card p-6 rounded-lg border shadow-sm">
-          <h2 className="text-xl font-semibold mb-4">Set COO Targets</h2>
-          <SetTargetForm coos={coos} />
         </section>
       </div>
 
