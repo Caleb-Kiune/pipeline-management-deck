@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { authClient } from "../lib/auth-client";
 import { PasswordInput } from "@/components/ui/password-input";
-import { Loader2 } from "lucide-react";
+import { Loader2, AlertCircle } from "lucide-react";
 
 import { checkUserStatus } from "../actions/auth.actions";
 
@@ -61,19 +61,24 @@ export function LoginForm() {
   };
 
   return (
-    <div className="w-full max-w-md mx-auto space-y-6">
-      <div className="text-center">
-        <h1 className="text-2xl font-bold tracking-tight">Welcome Back</h1>
-        <p className="text-sm text-muted-foreground">Log in to your account</p>
+    <div className="w-full space-y-6">
+      <div className="text-center space-y-1">
+        <h1 className="text-2xl font-semibold tracking-tight text-foreground">Welcome Back</h1>
+        <p className="text-sm text-muted-foreground">Sign in to your account</p>
       </div>
       <form onSubmit={handleLogin} className="space-y-4">
-        {error && <div className="text-red-500 text-sm text-center font-medium">{error}</div>}
+        {error && (
+          <div className="flex items-start gap-2 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+            <AlertCircle className="h-4 w-4 mt-0.5 shrink-0" />
+            <span>{error}</span>
+          </div>
+        )}
         <div className="space-y-2">
           <Label htmlFor="email">Email</Label>
           <Input 
             id="email" 
             type="email" 
-            placeholder="m@example.com" 
+            placeholder="you@company.com" 
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required 

@@ -23,7 +23,7 @@ export default async function PipelinePage() {
   });
 
   if (!activePeriod) {
-    return <div className="container mx-auto py-10 px-4">No active reporting period found. Please contact an administrator.</div>;
+    return <div className="container mx-auto py-8 px-6 lg:px-8">No active reporting period found. Please contact an administrator.</div>;
   }
 
   const periodId = activePeriod.id;
@@ -33,7 +33,7 @@ export default async function PipelinePage() {
   });
 
   return (
-    <div className="container max-w-6xl mx-auto py-10 px-4 space-y-12">
+    <div className="container max-w-6xl mx-auto py-8 px-6 lg:px-8 space-y-10">
       <div>
         <h1 className="text-3xl font-bold mb-2">COO Workspace</h1>
         <p className="text-muted-foreground">Manage your pipeline and track your performance.</p>

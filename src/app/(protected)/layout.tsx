@@ -1,10 +1,9 @@
 import { ReactNode } from "react";
-import Link from "next/link";
 import { headers } from "next/headers";
 import { auth } from "@/features/auth/lib/auth";
 import { redirect } from "next/navigation";
 import { LogOutButton } from "@/features/auth/components/logout-button";
-import { Settings } from "lucide-react";
+import { HeaderNav } from "@/components/header-nav";
 import { prisma } from "@/lib/db";
 
 export default async function ProtectedLayout({ children }: { children: ReactNode }) {
@@ -30,29 +29,15 @@ export default async function ProtectedLayout({ children }: { children: ReactNod
   const isManagement = role === "MANAGEMENT" || role === "ADMIN";
 
   return (
-    <div className="min-h-screen flex flex-col bg-slate-50 dark:bg-slate-900">
-      <header className="border-b bg-white dark:bg-slate-800 sticky top-0 z-10">
-        <div className="container mx-auto flex h-16 items-center justify-between px-4">
+    <div className="min-h-screen flex flex-col bg-canvas">
+      <header className="border-b border-border bg-card sticky top-0 z-10 shadow-[0_1px_2px_rgba(0,0,0,0.03)]">
+        <div className="container max-w-6xl mx-auto flex h-16 items-center justify-between px-6 lg:px-8">
           <div className="flex items-center space-x-8">
-            <h1 className="font-bold text-xl text-primary hidden sm:block">COO Platform</h1>
-            <nav className="flex space-x-6">
-              {!isManagement && (
-                <Link href="/pipeline" className="text-sm font-medium hover:text-primary transition-colors">
-                  Pipeline
-                </Link>
-              )}
-              {isManagement && (
-                <>
-                  <Link href="/dashboard" className="text-sm font-medium hover:text-primary transition-colors">
-                    Dashboard
-                  </Link>
-                  <Link href="/dashboard/settings" className="text-sm font-medium hover:text-primary transition-colors flex items-center space-x-1">
-                    <Settings className="w-4 h-4" />
-                    <span>Settings</span>
-                  </Link>
-                </>
-              )}
-            </nav>
+            <span className="font-semibold text-lg tracking-tight text-foreground">
+              COO Platform
+            </span>
+            <div className="h-5 w-px bg-border" />
+            <HeaderNav isManagement={isManagement} />
           </div>
           <div className="flex items-center space-x-4">
             <span className="text-sm font-medium text-muted-foreground hidden sm:inline-block">

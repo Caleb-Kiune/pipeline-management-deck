@@ -2,9 +2,14 @@ import { LoginForm } from "@/features/auth/components/login-form";
 
 export default function LoginPage() {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-900">
-      <div className="p-8 border rounded-xl shadow-sm bg-white dark:bg-slate-800 w-full max-w-md">
-        <LoginForm />
+    <div className="min-h-screen flex items-center justify-center bg-canvas px-6">
+      <div className="w-full max-w-md">
+        <div className="border-t-4 border-primary rounded-lg bg-card p-8 shadow-[var(--shadow-card)]">
+          <LoginForm />
+        </div>
+        <p className="mt-6 text-center text-xs text-muted-foreground tracking-wide">
+          CIC Insurance Group &middot; COO Platform
+        </p>
       </div>
     </div>
   );

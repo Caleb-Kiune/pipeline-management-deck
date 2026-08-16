@@ -18,7 +18,7 @@ export default async function DashboardPage(props: { searchParams: SearchParams 
 
   const role = session.user.role as string;
   if (role !== "MANAGEMENT" && role !== "ADMIN") {
-    return <div className="container mx-auto py-10 px-4 font-medium text-destructive">Access Denied. This section is restricted to Management only.</div>;
+    return <div className="container mx-auto py-8 px-6 lg:px-8 font-medium text-destructive">Access Denied. This section is restricted to Management only.</div>;
   }
 
   const activePeriod = await prisma.reportingPeriod.findFirst({
@@ -26,13 +26,13 @@ export default async function DashboardPage(props: { searchParams: SearchParams 
   });
 
   if (!activePeriod) {
-    return <div className="container mx-auto py-10 px-4">No active reporting period found.</div>;
+    return <div className="container mx-auto py-8 px-6 lg:px-8">No active reporting period found.</div>;
   }
   
   const searchParams = await props.searchParams;
 
   return (
-    <div className="container max-w-6xl mx-auto py-10 px-4">
+    <div className="container max-w-6xl mx-auto py-8 px-6 lg:px-8">
       <DashboardView periodId={activePeriod.id} searchParams={searchParams} />
     </div>
   );

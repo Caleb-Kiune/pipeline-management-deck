@@ -31,7 +31,7 @@ export default async function SettingsPage() {
   });
 
   return (
-    <div className="space-y-8 p-6">
+    <div className="container max-w-6xl mx-auto py-8 px-6 lg:px-8 space-y-8">
       <div>
         <h1 className="text-3xl font-bold">Admin Settings</h1>
         <p className="text-muted-foreground">Provision users and configure targets.</p>

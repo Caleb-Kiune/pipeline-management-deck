@@ -53,7 +53,7 @@ export default async function CooDashboardPage(props: { params: Promise<{ id: st
   });
 
   return (
-    <div className="container max-w-6xl mx-auto py-10 px-4 space-y-8">
+    <div className="container max-w-6xl mx-auto py-8 px-6 lg:px-8 space-y-8">
       <div>
         <h1 className="text-3xl font-bold">{coo.name} - Performance Dashboard</h1>
         <p className="text-muted-foreground">{coo.branch?.name || "Unknown Branch"} | Active Period: {activePeriod.month}/{activePeriod.year}</p>
