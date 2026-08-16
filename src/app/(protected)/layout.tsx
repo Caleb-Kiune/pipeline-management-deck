@@ -34,7 +34,7 @@ export default async function ProtectedLayout({ children }: { children: ReactNod
       <header className="border-b bg-white dark:bg-slate-800 sticky top-0 z-10">
         <div className="container mx-auto flex h-16 items-center justify-between px-4">
           <div className="flex items-center space-x-8">
-            <h1 className="font-bold text-xl text-primary hidden sm:block">CIC Platform</h1>
+            <h1 className="font-bold text-xl text-primary hidden sm:block">COO Platform</h1>
             <nav className="flex space-x-6">
               {!isManagement && (
                 <Link href="/pipeline" className="text-sm font-medium hover:text-primary transition-colors">
