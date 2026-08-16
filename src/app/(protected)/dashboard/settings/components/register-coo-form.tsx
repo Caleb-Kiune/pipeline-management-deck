@@ -66,8 +66,8 @@ export function RegisterCooForm({ branches }: { branches: Branch[] }) {
       <div className="space-y-2">
         <Label>Branch</Label>
         <Select 
-          value={formData.branch_id} 
-          onValueChange={val => setFormData({ ...formData, branch_id: val })}
+          value={formData.branch_id ?? ""} 
+          onValueChange={val => setFormData({ ...formData, branch_id: val ?? "" })}
         >
           <SelectTrigger>
             <SelectValue placeholder="Select branch" />

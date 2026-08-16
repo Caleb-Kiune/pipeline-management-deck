@@ -36,7 +36,7 @@ interface OpportunityFormProps {
 
 export function OpportunityForm({ initialData, onSuccess }: OpportunityFormProps) {
   const form = useForm<OpportunityFormValues>({
-    resolver: zodResolver(opportunityFormSchema),
+    resolver: zodResolver(opportunityFormSchema) as any,
     defaultValues: initialData || {
       client_name: "",
       contact_person: "",
@@ -143,8 +143,8 @@ export function OpportunityForm({ initialData, onSuccess }: OpportunityFormProps
                   type="number" 
                   placeholder="0" 
                   {...field} 
-                  value={field.value || ""} 
-                  onChange={e => field.onChange(e.target.value)} 
+                  value={field.value ?? ""} 
+                  onChange={e => field.onChange(e.target.value === "" ? undefined : Number(e.target.value))} 
                   onWheel={e => e.currentTarget.blur()}
                 />
               </FormControl>

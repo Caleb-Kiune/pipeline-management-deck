@@ -39,7 +39,7 @@ export function SetTargetForm({ coos }: { coos: User[] }) {
         <Label>Select COO</Label>
         <Select 
           value={formData.user_id} 
-          onValueChange={val => setFormData({ ...formData, user_id: val })}
+          onValueChange={val => setFormData({ ...formData, user_id: val ?? "" })}
         >
           <SelectTrigger>
             <SelectValue placeholder="Select COO" />
@@ -56,7 +56,7 @@ export function SetTargetForm({ coos }: { coos: User[] }) {
         <Input 
           required 
           type="number" 
-          value={formData.medical_target || ""} 
+          value={formData.medical_target ?? ""} 
           onChange={e => setFormData({ ...formData, medical_target: parseFloat(e.target.value) || 0 })} 
           placeholder="0" 
         />
@@ -66,7 +66,7 @@ export function SetTargetForm({ coos }: { coos: User[] }) {
         <Input 
           required 
           type="number" 
-          value={formData.non_medical_target || ""} 
+          value={formData.non_medical_target ?? ""} 
           onChange={e => setFormData({ ...formData, non_medical_target: parseFloat(e.target.value) || 0 })} 
           placeholder="0" 
         />
