@@ -42,41 +42,37 @@ export function PipelineView({ opportunities, onEdit }: PipelineViewProps) {
       <Table className="min-w-[800px]">
         <TableHeader>
           <TableRow>
-            <TableHead>Client</TableHead>
-            <TableHead>Contact</TableHead>
-            <TableHead>Category</TableHead>
             <TableHead>Product</TableHead>
-            <TableHead>Stage</TableHead>
-            <TableHead className="text-right">Premium</TableHead>
-            <TableHead>Date</TableHead>
-            <TableHead>Comment</TableHead>
+            <TableHead>Prospect</TableHead>
+            <TableHead>Contact Person</TableHead>
+            <TableHead className="text-right">Expected Premium</TableHead>
+            <TableHead>Expected Closure Month</TableHead>
+            <TableHead>Current Status</TableHead>
+            <TableHead>Comments</TableHead>
             <TableHead className="text-right">Actions</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {opportunities.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={9} className="text-center">
+              <TableCell colSpan={8} className="text-center">
                 No opportunities found.
               </TableCell>
             </TableRow>
           ) : (
             opportunities.map((opp) => (
               <TableRow key={opp.id}>
+                <TableCell>{opp.product.replace(/_/g, " ")}</TableCell>
                 <TableCell className="font-medium">{opp.client_name}</TableCell>
                 <TableCell>{opp.contact_person || "-"}</TableCell>
-                <TableCell>{opp.category}</TableCell>
-                <TableCell>{opp.product.replace(/_/g, " ")}</TableCell>
+                <TableCell className="text-right">
+                  {formatter.format(opp.expected_premium)}
+                </TableCell>
+                <TableCell>{opp.expected_closure_month}</TableCell>
                 <TableCell>
                   <Badge variant={getStageBadgeVariant(opp.stage)}>
                     {opp.stage}
                   </Badge>
-                </TableCell>
-                <TableCell className="text-right">
-                  {formatter.format(opp.expected_premium)}
-                </TableCell>
-                <TableCell>
-                  {new Date(opp.updated_at).toLocaleDateString()}
                 </TableCell>
                 <TableCell className="max-w-[150px] truncate" title={opp.latest_comment || ""}>
                   {opp.latest_comment || "-"}

@@ -8,6 +8,7 @@ export const opportunityFormSchema = z.object({
     message: "Please select a valid product"
   }),
   expected_premium: z.coerce.number().positive("Expected premium must be a positive number"),
+  expected_closure_month: z.string().min(1, "Expected closure month is required"),
   stage: z.nativeEnum(Stage, {
     message: "Please select a valid stage"
   }),

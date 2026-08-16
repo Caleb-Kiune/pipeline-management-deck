@@ -41,7 +41,8 @@ export function OpportunityForm({ initialData, onSuccess }: OpportunityFormProps
       client_name: "",
       contact_person: "",
       product: Product.COOP_CARE,
-      expected_premium: 0,
+      expected_premium: "" as any,
+      expected_closure_month: "",
       stage: Stage.PROSPECT,
       latest_comment: "",
     },
@@ -55,7 +56,8 @@ export function OpportunityForm({ initialData, onSuccess }: OpportunityFormProps
         client_name: "",
         contact_person: "",
         product: Product.COOP_CARE,
-        expected_premium: 0,
+        expected_premium: "" as any,
+        expected_closure_month: "",
         stage: Stage.PROSPECT,
         latest_comment: "",
       });
@@ -147,6 +149,20 @@ export function OpportunityForm({ initialData, onSuccess }: OpportunityFormProps
                   onChange={e => field.onChange(e.target.value === "" ? undefined : Number(e.target.value))} 
                   onWheel={e => e.currentTarget.blur()}
                 />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="expected_closure_month"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Expected Closure Month</FormLabel>
+              <FormControl>
+                <Input type="month" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>

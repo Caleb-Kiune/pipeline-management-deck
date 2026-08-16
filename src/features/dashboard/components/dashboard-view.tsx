@@ -1,4 +1,3 @@
-import { Category } from "@prisma/client";
 import { getDashboardStats } from "../actions/dashboard.queries";
 import { CompanyKPIs } from "./company-kpis";
 import { COOPerformanceTable } from "./coo-performance-table";
@@ -14,9 +13,9 @@ export async function DashboardView({ periodId, searchParams }: DashboardViewPro
   const categoryParam = typeof searchParams?.category === "string" ? searchParams.category : undefined;
   
   // Validate if it's a valid enum value
-  let filter: Category | undefined = undefined;
-  if (categoryParam && Object.values(Category).includes(categoryParam as Category)) {
-    filter = categoryParam as Category;
+  let filter: "MEDICAL" | "NON_MEDICAL" | undefined = undefined;
+  if (categoryParam === "MEDICAL" || categoryParam === "NON_MEDICAL") {
+    filter = categoryParam;
   }
 
   // Await the server action directly in the Server Component

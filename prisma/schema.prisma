@@ -11,10 +11,6 @@ datasource db {
 // Enums
 // ==========================================
 
-enum Category {
-  MEDICAL
-  NON_MEDICAL
-}
 
 enum Product {
   COOP_CARE
@@ -85,10 +81,10 @@ model Opportunity {
   id               String    @id @default(uuid())
   client_name      String
   contact_person   String?
-  category         Category
-  product          Product
-  expected_premium Float
-  stage            Stage
+  product                Product
+  expected_premium       Float
+  expected_closure_month String
+  stage                  Stage
   latest_comment   String?
   user_id          String
   period_id        String

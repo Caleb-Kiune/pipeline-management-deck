@@ -46,13 +46,13 @@ export default async function CooDashboardPage(props: { params: Promise<{ id: st
   });
 
   // Calculate Medical Metrics
-  const medOpps = opportunities.filter(o => o.category === "MEDICAL");
+  const medOpps = opportunities.filter(o => o.product === "COOP_CARE");
   const medClosed = medOpps.filter(o => o.stage === "CLOSED").reduce((s, o) => s + o.expected_premium, 0);
   const medPipeline = medOpps.filter(o => o.stage === "PROSPECT" || o.stage === "QUOTED").reduce((s, o) => s + o.expected_premium, 0);
   const medTarget = target?.medical_target || 0;
 
   // Calculate Non-Medical Metrics
-  const nonMedOpps = opportunities.filter(o => o.category === "NON_MEDICAL");
+  const nonMedOpps = opportunities.filter(o => o.product !== "COOP_CARE");
   const nonMedClosed = nonMedOpps.filter(o => o.stage === "CLOSED").reduce((s, o) => s + o.expected_premium, 0);
   const nonMedPipeline = nonMedOpps.filter(o => o.stage === "PROSPECT" || o.stage === "QUOTED").reduce((s, o) => s + o.expected_premium, 0);
   const nonMedTarget = target?.non_medical_target || 0;
@@ -125,47 +125,93 @@ export default async function CooDashboardPage(props: { params: Promise<{ id: st
         </Card>
       </div>
 
-      <div className="space-y-4">
-        <h2 className="text-2xl font-semibold">Opportunities</h2>
-        <div className="rounded-md border bg-card overflow-hidden">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Client Name</TableHead>
-                <TableHead>Contact</TableHead>
-                <TableHead>Category</TableHead>
-                <TableHead>Product</TableHead>
-                <TableHead>Stage</TableHead>
-                <TableHead className="text-right">Expected Premium</TableHead>
-                <TableHead>Comment</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {opportunities.length === 0 ? (
+      <div className="space-y-8">
+        <div className="space-y-4">
+          <h2 className="text-2xl font-semibold">Medical Opportunities</h2>
+          <div className="rounded-md border bg-card overflow-hidden">
+            <Table>
+              <TableHeader>
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center py-6 text-muted-foreground">
-                    No opportunities found for this period.
-                  </TableCell>
+                  <TableHead>Product</TableHead>
+                  <TableHead>Prospect</TableHead>
+                  <TableHead>Contact Person</TableHead>
+                  <TableHead className="text-right">Expected Premium</TableHead>
+                  <TableHead>Expected Closure Month</TableHead>
+                  <TableHead>Current Status</TableHead>
+                  <TableHead>Comments</TableHead>
                 </TableRow>
-              ) : (
-                opportunities.map((opp) => (
-                  <TableRow key={opp.id}>
-                    <TableCell className="font-medium">{opp.client_name}</TableCell>
-                    <TableCell>{opp.contact_person || "-"}</TableCell>
-                    <TableCell>{opp.category}</TableCell>
-                    <TableCell>{opp.product.replace(/_/g, " ")}</TableCell>
-                    <TableCell>{opp.stage}</TableCell>
-                    <TableCell className="text-right font-medium">
-                      {formatter.format(opp.expected_premium)}
-                    </TableCell>
-                    <TableCell className="max-w-[150px] truncate" title={opp.latest_comment || ""}>
-                      {opp.latest_comment || "-"}
+              </TableHeader>
+              <TableBody>
+                {medOpps.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={7} className="text-center py-6 text-muted-foreground">
+                      No medical opportunities found.
                     </TableCell>
                   </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
+                ) : (
+                  medOpps.map((opp) => (
+                    <TableRow key={opp.id}>
+                      <TableCell>{opp.product.replace(/_/g, " ")}</TableCell>
+                      <TableCell className="font-medium">{opp.client_name}</TableCell>
+                      <TableCell>{opp.contact_person || "-"}</TableCell>
+                      <TableCell className="text-right font-medium">
+                        {formatter.format(opp.expected_premium)}
+                      </TableCell>
+                      <TableCell>{opp.expected_closure_month}</TableCell>
+                      <TableCell>{opp.stage}</TableCell>
+                      <TableCell className="max-w-[150px] truncate" title={opp.latest_comment || ""}>
+                        {opp.latest_comment || "-"}
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </div>
+        </div>
+
+        <div className="space-y-4">
+          <h2 className="text-2xl font-semibold">Non-Medical Opportunities</h2>
+          <div className="rounded-md border bg-card overflow-hidden">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Product</TableHead>
+                  <TableHead>Prospect</TableHead>
+                  <TableHead>Contact Person</TableHead>
+                  <TableHead className="text-right">Expected Premium</TableHead>
+                  <TableHead>Expected Closure Month</TableHead>
+                  <TableHead>Current Status</TableHead>
+                  <TableHead>Comments</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {nonMedOpps.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={7} className="text-center py-6 text-muted-foreground">
+                      No non-medical opportunities found.
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  nonMedOpps.map((opp) => (
+                    <TableRow key={opp.id}>
+                      <TableCell>{opp.product.replace(/_/g, " ")}</TableCell>
+                      <TableCell className="font-medium">{opp.client_name}</TableCell>
+                      <TableCell>{opp.contact_person || "-"}</TableCell>
+                      <TableCell className="text-right font-medium">
+                        {formatter.format(opp.expected_premium)}
+                      </TableCell>
+                      <TableCell>{opp.expected_closure_month}</TableCell>
+                      <TableCell>{opp.stage}</TableCell>
+                      <TableCell className="max-w-[150px] truncate" title={opp.latest_comment || ""}>
+                        {opp.latest_comment || "-"}
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </div>
         </div>
       </div>
     </div>

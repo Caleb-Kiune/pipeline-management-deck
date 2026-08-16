@@ -1,7 +1,6 @@
 "use client";
 
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
-import { Category } from "@prisma/client";
 import {
   Select,
   SelectContent,
@@ -36,7 +35,7 @@ export function DashboardFilter() {
         </SelectTrigger>
         <SelectContent>
           <SelectItem value="ALL">All Categories</SelectItem>
-          {Object.values(Category).map((cat) => (
+          {["MEDICAL", "NON_MEDICAL"].map((cat) => (
             <SelectItem key={cat} value={cat}>
               {cat.replace(/_/g, " ")}
             </SelectItem>

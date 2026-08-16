@@ -65,7 +65,16 @@ export function PipelineWorkspace({ opportunities }: PipelineWorkspaceProps) {
           </div>
         )}
 
-        <PipelineView opportunities={opportunities} onEdit={handleEdit} />
+        <div className="space-y-8">
+          <div>
+            <h3 className="text-lg font-medium mb-4">Medical Opportunities</h3>
+            <PipelineView opportunities={opportunities.filter((opp) => opp.product === "COOP_CARE")} onEdit={handleEdit} />
+          </div>
+          <div>
+            <h3 className="text-lg font-medium mb-4">Non-Medical Opportunities</h3>
+            <PipelineView opportunities={opportunities.filter((opp) => opp.product !== "COOP_CARE")} onEdit={handleEdit} />
+          </div>
+        </div>
       </section>
     </div>
   );

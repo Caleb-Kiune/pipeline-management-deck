@@ -1,6 +1,6 @@
 "use server";
 
-import { Category, Role, Stage } from "@prisma/client";
+import { Role, Stage } from "@prisma/client";
 import { prisma } from "@/lib/db";
 
 export interface COODashboardStats {
@@ -25,7 +25,7 @@ export interface DashboardStatsResult {
 
 export async function getDashboardStats(
   periodId: string,
-  categoryFilter?: Category
+  categoryFilter?: "MEDICAL" | "NON_MEDICAL"
 ): Promise<DashboardStatsResult> {
   // Fetch all COOs with their branch, targets for this period, and opportunities for this period
   const coos = await prisma.user.findMany({
@@ -42,7 +42,8 @@ export async function getDashboardStats(
       opportunities: {
         where: {
           period_id: periodId,
-          ...(categoryFilter ? { category: categoryFilter } : {}),
+          ...(categoryFilter === "MEDICAL" ? { product: "COOP_CARE" } : {}),
+          ...(categoryFilter === "NON_MEDICAL" ? { product: { not: "COOP_CARE" } } : {}),
         },
       },
     },
