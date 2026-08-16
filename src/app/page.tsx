@@ -8,7 +8,7 @@ export default function LoginPage() {
           <LoginForm />
         </div>
         <p className="mt-6 text-center text-xs text-muted-foreground tracking-wide">
-          CIC Insurance Group &middot; COO Platform
+          Insurance &middot; COO Platform
         </p>
       </div>
     </div>
