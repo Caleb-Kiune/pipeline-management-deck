@@ -6,6 +6,7 @@ import { PeriodStatus, Role } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { z } from "zod";
 import { hashPassword } from "better-auth/crypto";
+import { revalidatePath } from "next/cache";
 
 const createCooSchema = z.object({
   email: z.string().email(),
@@ -204,6 +205,7 @@ export async function editCoo(id: string, data: any) {
       });
     }
 
+    revalidatePath("/dashboard/settings");
     return { success: true, message: "COO details updated successfully" };
   } catch (error: any) {
     return { success: false, error: error.message || "An unexpected error occurred" };
@@ -217,6 +219,7 @@ export async function toggleCooStatus(id: string, isActive: boolean) {
       where: { id },
       data: { isActive }
     });
+    revalidatePath("/dashboard/settings");
     return { success: true, message: `COO ${isActive ? "activated" : "deactivated"} successfully` };
   } catch (error: any) {
     return { success: false, error: error.message || "An unexpected error occurred" };
@@ -229,6 +232,7 @@ export async function hardDeleteCoo(id: string) {
     await prisma.user.delete({
       where: { id }
     });
+    revalidatePath("/dashboard/settings");
     return { success: true, message: "COO permanently deleted" };
   } catch (error: any) {
     return { success: false, error: error.message || "An unexpected error occurred" };

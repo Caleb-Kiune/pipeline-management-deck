@@ -20,7 +20,7 @@ export default async function ProtectedLayout({ children }: { children: ReactNod
     where: { id: session.user.id }
   });
 
-  if (!dbUser || (dbUser as any).isActive === false) {
+  if (!dbUser || dbUser.isActive === false) {
     await prisma.session.deleteMany({ where: { userId: session.user.id } });
     redirect("/");
   }

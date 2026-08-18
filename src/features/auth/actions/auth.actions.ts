@@ -12,7 +12,7 @@ export async function checkUserStatus(email: string) {
       return { success: true, exists: false };
     }
 
-    return { success: true, exists: true, isActive: (user as any).isActive };
+    return { success: true, exists: true, isActive: user.isActive };
   } catch (error: any) {
     return { success: false, error: error.message || "Failed to check user status" };
   }

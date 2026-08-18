@@ -1,14 +1,12 @@
 import { betterFetch } from "@better-fetch/fetch";
 import { NextResponse, type NextRequest } from "next/server";
 
-export async function proxy(request: NextRequest) {
+export async function middleware(request: NextRequest) {
   const { data: session } = await betterFetch<any>(
     "/api/auth/get-session",
     {
       baseURL: request.nextUrl.origin,
-      headers: {
-        cookie: request.headers.get("cookie") || "",
-      },
+      headers: request.headers,
     }
   );
 

@@ -78,7 +78,6 @@ export function ManageCoosTable({ coos, branches }: { coos: (User & { branch?: B
       } else {
         toast.success(res.message || "COO details updated successfully");
         setEditingCoo(null);
-        window.location.reload();
       }
     } catch (error) {
       console.error(error);
@@ -96,7 +95,6 @@ export function ManageCoosTable({ coos, branches }: { coos: (User & { branch?: B
         toast.error(res.error || "Failed to toggle COO status");
       } else {
         toast.success(res.message || "Status toggled successfully");
-        window.location.reload();
       }
     } catch (e) {
       console.error(e);
@@ -115,7 +113,6 @@ export function ManageCoosTable({ coos, branches }: { coos: (User & { branch?: B
         toast.error(res.error || "Failed to hard delete COO");
       } else {
         toast.success(res.message || "COO permanently deleted");
-        window.location.reload();
       }
     } catch (e) {
       console.error(e);
@@ -156,7 +153,7 @@ export function ManageCoosTable({ coos, branches }: { coos: (User & { branch?: B
                 <TableCell>{coo.email}</TableCell>
                 <TableCell>{coo.branch?.name || "No Branch"}</TableCell>
                 <TableCell>
-                  {(coo as any).isActive ? (
+                  {coo.isActive ? (
                     <Badge variant="success">Active</Badge>
                   ) : (
                     <Badge variant="secondary">Deactivated</Badge>
@@ -169,8 +166,8 @@ export function ManageCoosTable({ coos, branches }: { coos: (User & { branch?: B
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
                       <DropdownMenuItem onClick={() => openEditModal(coo)}>Edit Details</DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => setConfirmAction({ type: "toggle", cooId: coo.id, currentStatus: (coo as any).isActive })}>
-                        {(coo as any).isActive ? "Deactivate" : "Activate"}
+                      <DropdownMenuItem onClick={() => setConfirmAction({ type: "toggle", cooId: coo.id, currentStatus: coo.isActive })}>
+                        {coo.isActive ? "Deactivate" : "Activate"}
                       </DropdownMenuItem>
                       <DropdownMenuItem className="text-destructive" onClick={() => setConfirmAction({ type: "delete", cooId: coo.id })}>
                         Hard Delete

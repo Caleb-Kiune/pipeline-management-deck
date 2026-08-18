@@ -55,6 +55,8 @@ model ReportingPeriod {
 
   targets       Target[]
   opportunities Opportunity[]
+
+  @@unique([month, year])
 }
 
 model Branch {
