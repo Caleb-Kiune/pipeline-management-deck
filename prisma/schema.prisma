@@ -79,6 +79,13 @@ model Target {
   @@unique([user_id, period_id])
 }
 
+enum ReconciliationStatus {
+  UNRECONCILED
+  VERIFIED
+  REJECTED
+  FLAGGED
+}
+
 model Opportunity {
   id               String    @id @default(uuid())
   client_name      String
@@ -88,6 +95,12 @@ model Opportunity {
   expected_closure_month String
   stage                  Stage
   latest_comment   String?
+  
+  // Reconciliation / Audit fields
+  reconciliation_status ReconciliationStatus @default(UNRECONCILED)
+  actual_premium_kshs   Float?
+  reconciliation_notes  String?
+
   user_id          String
   period_id        String
   created_at       DateTime  @default(now())
