@@ -90,6 +90,7 @@ model Opportunity {
   id               String    @id @default(uuid())
   client_name      String
   contact_person   String?
+  intermediary     String    @default("Direct")
   product                Product
   expected_premium       Float
   expected_closure_month String
@@ -98,7 +99,8 @@ model Opportunity {
   
   // Reconciliation / Audit fields
   reconciliation_status ReconciliationStatus @default(UNRECONCILED)
-  actual_premium_kshs   Float?
+  pr_verified_data      Json?
+  pr_invoice_number     String?
   reconciliation_notes  String?
 
   user_id          String

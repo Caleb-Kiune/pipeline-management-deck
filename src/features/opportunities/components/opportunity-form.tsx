@@ -43,6 +43,7 @@ export function OpportunityForm({ initialData, onSuccess }: OpportunityFormProps
     resolver: zodResolver(opportunityFormSchema) as any,
     defaultValues: initialData || {
       client_name: "",
+      intermediary: "",
       contact_person: "",
       product: Product.COOP_CARE,
       expected_premium: "" as any,
@@ -58,6 +59,7 @@ export function OpportunityForm({ initialData, onSuccess }: OpportunityFormProps
     } else {
       form.reset({
         client_name: "",
+        intermediary: "",
         contact_person: "",
         product: Product.COOP_CARE,
         expected_premium: "" as any,
@@ -103,6 +105,20 @@ export function OpportunityForm({ initialData, onSuccess }: OpportunityFormProps
               <FormLabel>Client Name</FormLabel>
               <FormControl>
                 <Input placeholder="Enter client name" disabled={isSubmitting} {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="intermediary"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Intermediary</FormLabel>
+              <FormControl>
+                <Input placeholder="Enter intermediary (e.g., Direct)" disabled={isSubmitting} {...field} value={field.value || ""} />
               </FormControl>
               <FormMessage />
             </FormItem>

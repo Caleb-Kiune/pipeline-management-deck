@@ -3,8 +3,16 @@
 import { useState, useMemo } from "react";
 import { ExcelUploader, type ExcelRowData } from "./ExcelUploader";
 import { ReconciliationTable } from "./ReconciliationTable";
+import Fuse from "fuse.js";
 
-export function ReconciliationWorkspace({ initialOpportunities }: { initialOpportunities: any[] }) {
+export interface EvaluatedOpportunity {
+  opportunity: any;
+  matchColor: 'GREEN' | 'YELLOW' | 'RED' | 'GRAY';
+  bestMatch: ExcelRowData | null;
+  matchReasons: string[];
+}
+
+export function ReconciliationWorkspace({ initialOpportunities, verifiedInvoices }: { initialOpportunities: any[], verifiedInvoices: string[] }) {
   const [excelData, setExcelData] = useState<ExcelRowData[] | null>(null);
   const [selectedCooId, setSelectedCooId] = useState<string | null>(null);
   const [opportunities, setOpportunities] = useState(initialOpportunities);
@@ -42,6 +50,97 @@ export function ReconciliationWorkspace({ initialOpportunities }: { initialOppor
     if (!selectedCooId) return [];
     return opportunities.filter(opp => opp.user_id === selectedCooId);
   }, [opportunities, selectedCooId]);
+
+  // The Composite Matching Algorithm
+  const evaluatedOpportunities = useMemo<EvaluatedOpportunity[]>(() => {
+    if (!excelData || excelData.length === 0) return [];
+
+    const nameFuse = new Fuse(excelData, { keys: ["Insured", "Client Name", "Client"], threshold: 0.4, includeScore: true });
+    const interFuse = new Fuse(excelData, { keys: ["Intermediary_name", "Intermediary"], threshold: 0.4, includeScore: true });
+
+    return filteredOpportunities.map(opp => {
+      const nameRes = nameFuse.search(opp.client_name);
+      const interRes = interFuse.search(opp.intermediary || "");
+
+      // Get top matches
+      const topNameMatch = nameRes[0];
+      const topInterMatch = interRes[0];
+
+      let bestMatch: ExcelRowData | null = null;
+      let reasons: string[] = [];
+      let color: 'GREEN' | 'YELLOW' | 'RED' | 'GRAY' = 'GRAY';
+
+      if (topNameMatch) {
+        bestMatch = topNameMatch.item;
+        reasons.push("Client Name matched.");
+      } else if (topInterMatch) {
+        bestMatch = topInterMatch.item;
+        reasons.push("Client Name didn't match, but Intermediary did.");
+      }
+
+      if (bestMatch) {
+        // Evaluate Premium
+        const excelPremium = Number(bestMatch.Gross_premium_kshs || bestMatch["Gross Premium"] || bestMatch.Premium || bestMatch.Paid_amount_kshs || bestMatch.Basic_premium_kshs || 0);
+        const oppPremium = opp.expected_premium;
+        
+        const diff = Math.abs(excelPremium - oppPremium);
+        const margin = oppPremium * 0.05; // 5% margin
+        
+        const isPremiumMatch = diff <= margin;
+        if (isPremiumMatch) {
+          reasons.push("Premium matches within 5% margin.");
+        } else {
+          reasons.push(`Premium mismatch (Expected: ${oppPremium}, Excel: ${excelPremium}).`);
+        }
+
+        const isInterMatch = topInterMatch && topInterMatch.item === bestMatch;
+        if (isInterMatch && !reasons.includes("Client Name didn't match, but Intermediary did.")) {
+          reasons.push("Intermediary matched.");
+        } else if (!isInterMatch) {
+          reasons.push("Intermediary mismatch.");
+        }
+
+        // Branch check
+        const cooBranch = opp.user?.branch?.name?.toUpperCase() || "UNKNOWN";
+        const excelBranch = String(bestMatch.Branch_name || bestMatch.Branch || "N/A").toUpperCase();
+        
+        let isBranchMismatch = false;
+        if (excelBranch !== "N/A" && cooBranch !== "UNKNOWN") {
+          if (!excelBranch.includes(cooBranch) && !cooBranch.includes(excelBranch)) {
+            isBranchMismatch = true;
+            reasons.push(`CONFLICT: Cross-Branch Claim (PR Branch: ${excelBranch}, COO Branch: ${cooBranch})`);
+          } else {
+            reasons.push("Branch matched.");
+          }
+        }
+
+        // Conflict check
+        const invoiceNo = String(bestMatch.Invoice_number || bestMatch.Invoice || "");
+        let isInvoiceConflict = false;
+        if (invoiceNo && verifiedInvoices.includes(invoiceNo)) {
+          isInvoiceConflict = true;
+          reasons.push(`CONFLICT: Excel Invoice ${invoiceNo} is already verified by another COO.`);
+        }
+
+        if (isInvoiceConflict || isBranchMismatch) {
+          color = 'RED';
+        } else if (topNameMatch && isPremiumMatch && isInterMatch) {
+          color = 'GREEN';
+        } else {
+          color = 'YELLOW';
+        }
+      } else {
+        reasons.push("No viable match found in Excel.");
+      }
+
+      return {
+        opportunity: opp,
+        matchColor: color,
+        bestMatch,
+        matchReasons: reasons
+      };
+    });
+  }, [filteredOpportunities, excelData, verifiedInvoices]);
 
   return (
     <div>
@@ -88,8 +187,7 @@ export function ReconciliationWorkspace({ initialOpportunities }: { initialOppor
           <div className="flex-1">
             {selectedCooId ? (
               <ReconciliationTable 
-                opportunities={filteredOpportunities} 
-                excelData={excelData}
+                evaluatedOpportunities={evaluatedOpportunities} 
                 onOpportunityMapped={handleOpportunityMapped}
               />
             ) : (

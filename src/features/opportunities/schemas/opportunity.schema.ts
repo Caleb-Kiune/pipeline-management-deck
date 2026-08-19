@@ -3,6 +3,7 @@ import { Product, Stage } from "@prisma/client";
 
 export const opportunityFormSchema = z.object({
   client_name: z.string().min(1, "Client name is required"),
+  intermediary: z.string().min(1, "Intermediary is required"),
   contact_person: z.string().optional(),
   product: z.nativeEnum(Product, {
     message: "Please select a valid product"

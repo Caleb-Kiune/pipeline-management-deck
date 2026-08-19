@@ -20,7 +20,11 @@ export default async function ReconciliationPage() {
   }
 
   const activePeriod = await prisma.reportingPeriod.findFirst({
-    where: { status: PeriodStatus.OPEN }
+    where: { status: PeriodStatus.OPEN },
+    orderBy: [
+      { year: 'desc' },
+      { month: 'desc' }
+    ]
   });
 
   if (!activePeriod) {
@@ -42,9 +46,22 @@ export default async function ReconciliationPage() {
         in: [ReconciliationStatus.UNRECONCILED, ReconciliationStatus.FLAGGED]
       }
     },
-    include: { user: true },
+    include: { user: { include: { branch: true } } },
     orderBy: { created_at: 'desc' }
   });
+
+  const verifiedRecords = await prisma.opportunity.findMany({
+    where: {
+      period_id: activePeriod.id,
+      reconciliation_status: ReconciliationStatus.VERIFIED,
+      pr_invoice_number: { not: null }
+    },
+    select: { pr_invoice_number: true }
+  });
+
+  const verifiedInvoices = verifiedRecords
+    .map(v => v.pr_invoice_number)
+    .filter((v): v is string => v !== null);
 
   return (
     <div className="container max-w-6xl mx-auto py-8 px-6 lg:px-8">
@@ -55,7 +72,10 @@ export default async function ReconciliationPage() {
         </p>
       </div>
 
-      <ReconciliationWorkspace initialOpportunities={opportunities} />
+      <ReconciliationWorkspace 
+        initialOpportunities={opportunities} 
+        verifiedInvoices={verifiedInvoices}
+      />
     </div>
   );
 }
