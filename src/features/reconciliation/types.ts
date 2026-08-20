@@ -1,5 +1,12 @@
 import type { Opportunity, User, Branch } from '@prisma/client';
-import type { ExcelRowData } from './components/ExcelUploader';
+import type { PrCategory } from './constants';
+export type { PrCategory };
+
+export interface ExcelRowData {
+  _prCategory?: string;
+  _cleanedName?: string;
+  [key: string]: any; 
+}
 
 // ─── Opportunity with its relations (replaces `any` throughout) ───
 export type OpportunityWithUser = Opportunity & {
@@ -58,3 +65,48 @@ export interface EvaluatedOpportunity {
 
 // ─── Action States ───
 export type RowActionState = 'pending' | 'verified' | 'rejected' | 'flagged';
+
+export interface UploadSlotState {
+  category: PrCategory;
+  file: File | null;
+  rows: ExcelRowData[];  
+  status: 'empty' | 'loading' | 'loaded' | 'error';
+  error?: string;
+  sheetNames?: string[];
+  selectedSheet?: string;
+}
+
+export interface CooEntry {
+  id: string;
+  name: string;
+  branchName: string | null;
+  claimCount: number;
+}
+
+export interface GroupedClaims {
+  category: PrCategory;         
+  products: {
+    product: string;            
+    claims: OpportunityWithUser[];
+  }[];
+}
+
+export interface PayrollRow {
+  opportunityId: string;
+  clientName: string;
+  product: string;
+  cooName: string;
+  cooBranch: string;
+  grossPremium: number;
+  commission: number;          
+  matchedPrRows: ExcelRowData[];
+  verifiedAt: Date;
+}
+
+export type ClaimActionState = 'pending' | 'approved' | 'rejected' | 'flagged';
+
+export interface FlagNote {
+  opportunityId: string;
+  note: string;
+  flaggedAt: Date;
+}

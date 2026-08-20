@@ -20,11 +20,23 @@ export const PRODUCT_TO_PR_CATEGORY: Record<Product, string> = {
   OTHER:            'Unknown',
 };
 
+export const COMMISSION_RATE = 0.01; // 1%
+
 /**
- * Premium tolerance for "close match".
- * 5% of the expected premium.
+ * Stop-words stripped from client names before fuzzy matching.
  */
-export const PREMIUM_TOLERANCE_PERCENT = 0.05;
+export const NAME_STOP_WORDS = [
+  'LTD', 'LIMITED', 'SACCO', 'FARM', 'SCHOOL',
+  'AGENCY', 'UNIVERSITY', 'HOSPITAL',
+] as const;
+
+export const STOP_WORD_REGEX = new RegExp(
+  `\\b(${NAME_STOP_WORDS.join('|')})\\b`,
+  'gi'
+);
+
+export const PR_CATEGORIES = ['Medical', 'Non-Medical', 'Livestock'] as const;
+export type PrCategory = typeof PR_CATEGORIES[number];
 
 /**
  * Fuse.js threshold for "strong" name match (Bucket A gate).
