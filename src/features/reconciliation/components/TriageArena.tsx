@@ -21,8 +21,9 @@ export function TriageArena() {
       activePeriodYear: state.activePeriodYear,
       verifiedInvoices: state.verifiedInvoices,
       activeTab: state.activeTab,
+      manualQuery: state.searchQuery,
     });
-  }, [claim, state.dataLake, state.activePeriodMonth, state.activePeriodYear, state.verifiedInvoices, state.activeTab]);
+  }, [claim, state.dataLake, state.activePeriodMonth, state.activePeriodYear, state.verifiedInvoices, state.activeTab, state.searchQuery]);
 
   const handleApprove = async (candidate: any) => {
     if (!claim) return;
@@ -89,6 +90,21 @@ export function TriageArena() {
           <strong>Flag Note:</strong> {state.flagNotes.get(claim.id)?.note}
         </div>
       )}
+
+      <div className="px-4 py-3 bg-muted/30 border-b border-border flex items-center gap-3">
+        <input 
+          type="text" 
+          placeholder="Manual override search..." 
+          className="flex-1 max-w-sm px-3 py-1.5 text-sm rounded-md border border-border bg-background focus:outline-none focus:ring-2 focus:ring-primary/20"
+          value={state.searchQuery}
+          onChange={(e) => dispatch({ type: 'SET_SEARCH_QUERY', payload: e.target.value })}
+        />
+        {state.searchQuery && (
+          <span className="text-xs text-muted-foreground font-medium">
+            Showing all matches for "{state.searchQuery}"
+          </span>
+        )}
+      </div>
 
       <div className="mt-4">
         {evaluatedCandidates.length === 0 ? (

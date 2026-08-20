@@ -30,6 +30,7 @@ export interface ReconciliationState {
   verifiedInvoices: string[];
   allOpportunities: OpportunityWithUser[];
   activeTab: PrCategory;
+  searchQuery: string;
 }
 
 export type ReconciliationAction =
@@ -44,7 +45,8 @@ export type ReconciliationAction =
   | { type: 'REJECT_CLAIM'; payload: { opportunityId: string } }
   | { type: 'FLAG_CLAIM'; payload: { opportunityId: string; note: string } }
   | { type: 'UNDO_PAYROLL'; payload: { opportunityId: string } }
-  | { type: 'SET_TAB'; payload: PrCategory };
+  | { type: 'SET_TAB'; payload: PrCategory }
+  | { type: 'SET_SEARCH_QUERY'; payload: string };
 
 function rebuildDataLake(uploads: Record<PrCategory, UploadSlotState>): ExcelRowData[] {
   return PR_CATEGORIES.flatMap(cat => uploads[cat].rows);
@@ -61,7 +63,8 @@ function reducer(state: ReconciliationState, action: ReconciliationAction): Reco
         evaluatedCandidates: [],
         payrollCart: [],
         claimActions: new Map(),
-        flagNotes: new Map()
+        flagNotes: new Map(),
+        searchQuery: ''
       };
     }
     case 'SET_TAB': {
@@ -69,7 +72,8 @@ function reducer(state: ReconciliationState, action: ReconciliationAction): Reco
         ...state,
         activeTab: action.payload,
         selectedClaimId: null,
-        evaluatedCandidates: []
+        evaluatedCandidates: [],
+        searchQuery: ''
       };
     }
     case 'UPLOAD_FILE': {
@@ -119,10 +123,13 @@ function reducer(state: ReconciliationState, action: ReconciliationAction): Reco
       };
     }
     case 'SELECT_CLAIM': {
-      return { ...state, selectedClaimId: action.payload };
+      return { ...state, selectedClaimId: action.payload, searchQuery: '' };
     }
     case 'SET_EVALUATED_CANDIDATES': {
       return { ...state, evaluatedCandidates: action.payload };
+    }
+    case 'SET_SEARCH_QUERY': {
+      return { ...state, searchQuery: action.payload };
     }
     case 'APPROVE_CANDIDATE': {
       const { opportunityId, candidate } = action.payload;
@@ -270,6 +277,7 @@ export function ReconciliationProvider({
     verifiedInvoices,
     allOpportunities: initialOpportunities,
     activeTab: 'Medical' as PrCategory,
+    searchQuery: '',
   };
 
   const [state, dispatch] = useReducer(reducer, initialState);

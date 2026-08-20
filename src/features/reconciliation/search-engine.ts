@@ -1,14 +1,44 @@
-import Fuse from 'fuse.js';
-import { STOP_WORD_REGEX, PRODUCT_TO_PR_CATEGORY, NAME_MATCH_THRESHOLD, NAME_CANDIDATE_THRESHOLD, COVER_MONTH_TOLERANCE } from './constants';
+import { STOP_WORD_REGEX, PRODUCT_TO_PR_CATEGORY, COVER_MONTH_TOLERANCE } from './constants';
 import type { OpportunityWithUser, ExcelRowData, ScoredCandidate, GroupedClaims, PrCategory } from './types';
+
+const PRODUCT_STOP_WORDS = [
+  'COOPCARE', 'COOP CARE', 'COOP_CARE', 'JILINDE', 'JIKINGE', 'HOSPICASH', 'GFE', 
+  'STUDENTS PA', 'STUDENTS_PA', 'BIASHARA SALAMA', 'BIASHARA_SALAMA', 'LIVESTOCK'
+];
+const PRODUCT_STOP_REGEX = new RegExp(`\\b(${PRODUCT_STOP_WORDS.join('|')})\\b`, 'gi');
 
 export function cleanName(raw: string): string {
   if (!raw) return '';
   return raw
     .toUpperCase()
+    .replace(/[-.,'"”’—_]/g, ' ')
     .replace(STOP_WORD_REGEX, '')
+    .replace(PRODUCT_STOP_REGEX, '')
     .replace(/\s+/g, ' ')
     .trim();
+}
+
+export function levenshteinDistance(a: string, b: string): number {
+  const matrix = [];
+  for (let i = 0; i <= b.length; i++) {
+    matrix[i] = [i];
+  }
+  for (let j = 0; j <= a.length; j++) {
+    matrix[0][j] = j;
+  }
+  for (let i = 1; i <= b.length; i++) {
+    for (let j = 1; j <= a.length; j++) {
+      if (b.charAt(i - 1) == a.charAt(j - 1)) {
+        matrix[i][j] = matrix[i - 1][j - 1];
+      } else {
+        matrix[i][j] = Math.min(
+          matrix[i - 1][j - 1] + 1, 
+          Math.min(matrix[i][j - 1] + 1, matrix[i - 1][j] + 1)
+        );
+      }
+    }
+  }
+  return matrix[b.length][a.length];
 }
 
 function parsePeriodMatchesExact(periodStr: string, activeMonth: number, activeYear: number): boolean {
@@ -52,34 +82,63 @@ function parsePeriodMatchesExact(periodStr: string, activeMonth: number, activeY
 export function findCandidates(
   claim: OpportunityWithUser,
   dataLake: ExcelRowData[],
-  config: { activePeriodMonth: number; activePeriodYear: number; verifiedInvoices: string[]; activeTab: PrCategory; }
+  config: { activePeriodMonth: number; activePeriodYear: number; verifiedInvoices: string[]; activeTab: PrCategory; manualQuery?: string; }
 ): ScoredCandidate[] {
-  const filteredLake = dataLake.filter(row => row._prCategory === config.activeTab);
-  
-  if (filteredLake.length === 0) return [];
+  if (dataLake.length === 0) return [];
 
-  const cleanedClaimName = cleanName(claim.client_name);
-  
-  const lakeWithCleanedNames: ExcelRowData[] = filteredLake.map(row => ({
+  const lakeWithCleanedNames: ExcelRowData[] = dataLake.map(row => ({
     ...row,
     _cleanedName: cleanName(String(row.Insured || row["Client Name"] || row.Client || ""))
   }));
 
-  const fuse = new Fuse(lakeWithCleanedNames, {
-    keys: ['_cleanedName'],
-    threshold: NAME_CANDIDATE_THRESHOLD,
-    includeScore: true,
-  });
+  let evaluatedCandidates: Array<{ item: ExcelRowData, score: number }> = [];
 
-  const fuseResults = fuse.search(cleanedClaimName, { limit: 15 });
+  const manualQ = (config.manualQuery || '').trim();
+  if (manualQ.length > 2) {
+    const cleanedManual = cleanName(manualQ);
+    const matches = lakeWithCleanedNames.filter(row => 
+      (row._cleanedName || '').includes(cleanedManual)
+    );
+    evaluatedCandidates = matches.map(item => ({ item, score: 100 }));
+  } else {
+    const cleanedClaimName = cleanName(claim.client_name);
+    const cooTokens = cleanedClaimName.split(' ').filter(t => t.length > 0);
 
-  const scoredCandidates: ScoredCandidate[] = fuseResults.map(res => {
-    let score = 0;
+    const scored = lakeWithCleanedNames.map(candidate => {
+      let baseScore = 0;
+      const candidateTokens = (candidate._cleanedName || '').split(' ').filter(t => t.length > 0);
+
+      if (cooTokens.length > 0 && candidateTokens.length > 0) {
+        const cooFirst = cooTokens[0];
+        const candFirst = candidateTokens[0];
+
+        if (cooFirst === candFirst) {
+          baseScore += 50;
+        } else if (levenshteinDistance(cooFirst, candFirst) <= 2) {
+          baseScore += 30;
+        } else if (cooFirst.includes(candFirst) || candFirst.includes(cooFirst)) {
+          baseScore += 20;
+        }
+
+        for (let i = 1; i < cooTokens.length; i++) {
+          if (candidateTokens.includes(cooTokens[i])) {
+            baseScore += 10;
+          }
+        }
+      }
+
+      return { item: candidate, score: baseScore };
+    });
+
+    evaluatedCandidates = scored.filter(c => c.score > 0);
+  }
+
+  const scoredCandidates: ScoredCandidate[] = evaluatedCandidates.map(res => {
+    let score = res.score;
     const candidate = res.item;
-    const fuseScore = res.score ?? 1;
 
     const fieldMatches: ScoredCandidate['fieldMatches'] = {
-      clientName: 'unavailable',
+      clientName: 'match', // Implicit match because it passed the Token Matcher threshold
       intermediary: 'unavailable',
       branch: 'unavailable',
       premium: 'unavailable',
@@ -88,13 +147,6 @@ export function findCandidates(
     };
     
     const discrepancies: ScoredCandidate['discrepancies'] = [];
-
-    if (fuseScore <= NAME_MATCH_THRESHOLD) {
-      fieldMatches.clientName = 'match';
-      score += 3;
-    } else {
-      fieldMatches.clientName = 'mismatch';
-    }
 
     const cooBranch = claim.user?.branch?.name?.toUpperCase() || "";
     const excelBranch = String(candidate.Branch_name || candidate.Branch || "").toUpperCase();

@@ -26,8 +26,11 @@ export const COMMISSION_RATE = 0.01; // 1%
  * Stop-words stripped from client names before fuzzy matching.
  */
 export const NAME_STOP_WORDS = [
-  'LTD', 'LIMITED', 'SACCO', 'FARM', 'SCHOOL',
-  'AGENCY', 'UNIVERSITY', 'HOSPITAL',
+  'LTD', 'LIMITED', 'SACCO', 'FARM', 'SCHOOL', 'AGENCY', 'UNIVERSITY', 'HOSPITAL',
+  'TECHNICAL', 'COLLEGE', 'TRAINING', 'SOCIETY', 'ENTERPRISES', 'INVESTMENTS',
+  'COMPANY', 'CO', 'INC', 'GROUP', 'SERVICES', 'INSTITUTE', 'ACADEMY',
+  'CLINIC', 'CENTER', 'CENTRE', 'TRUST', 'FOUNDATION', 'CHURCH', 'MINISTRIES',
+  'COOPERATIVE', 'CO-OPERATIVE'
 ] as const;
 
 export const STOP_WORD_REGEX = new RegExp(
