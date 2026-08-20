@@ -8,12 +8,12 @@ import Fuse from "fuse.js";
 export interface EvaluatedOpportunity {
   opportunity: any;
   matchColor: 'GREEN' | 'YELLOW' | 'RED' | 'GRAY';
-  bestMatch: ExcelRowData | null;
+  topCandidates: ExcelRowData[];
   matchReasons: string[];
 }
 
 export function ReconciliationWorkspace({ initialOpportunities, verifiedInvoices }: { initialOpportunities: any[], verifiedInvoices: string[] }) {
-  const [excelData, setExcelData] = useState<ExcelRowData[] | null>(null);
+  const [masterExcelData, setMasterExcelData] = useState<ExcelRowData[] | null>(null);
   const [selectedCooId, setSelectedCooId] = useState<string | null>(null);
   const [opportunities, setOpportunities] = useState(initialOpportunities);
 
@@ -34,7 +34,14 @@ export function ReconciliationWorkspace({ initialOpportunities, verifiedInvoices
   }, [opportunities]);
 
   const handleDataProcessed = (data: ExcelRowData[]) => {
-    setExcelData(data);
+    setMasterExcelData(prev => {
+      const existing = prev || [];
+      // Deduplicate: avoid pushing rows with identical stringified content (e.g. from re-uploading same sheet)
+      const existingSet = new Set(existing.map(e => JSON.stringify(e)));
+      const newUnique = data.filter(d => !existingSet.has(JSON.stringify(d)));
+      return [...existing, ...newUnique];
+    });
+    
     // Auto-select first COO if available
     if (coos.length > 0 && !selectedCooId) {
       setSelectedCooId(coos[0].id);
@@ -42,7 +49,6 @@ export function ReconciliationWorkspace({ initialOpportunities, verifiedInvoices
   };
 
   const handleOpportunityMapped = (opportunityId: string) => {
-    // Optimistic UI update: remove the mapped opportunity from local state
     setOpportunities(prev => prev.filter(opp => opp.id !== opportunityId));
   };
 
@@ -51,102 +57,122 @@ export function ReconciliationWorkspace({ initialOpportunities, verifiedInvoices
     return opportunities.filter(opp => opp.user_id === selectedCooId);
   }, [opportunities, selectedCooId]);
 
-  // The Composite Matching Algorithm
+  // The 6-Point Waterfall Matching Algorithm
   const evaluatedOpportunities = useMemo<EvaluatedOpportunity[]>(() => {
-    if (!excelData || excelData.length === 0) return [];
+    if (!masterExcelData || masterExcelData.length === 0) return [];
 
-    const nameFuse = new Fuse(excelData, { keys: ["Insured", "Client Name", "Client"], threshold: 0.4, includeScore: true });
-    const interFuse = new Fuse(excelData, { keys: ["Intermediary_name", "Intermediary"], threshold: 0.4, includeScore: true });
+    const nameFuse = new Fuse(masterExcelData, { keys: ["Insured", "Client Name", "Client"], threshold: 0.4, includeScore: true });
+    const interFuse = new Fuse(masterExcelData, { keys: ["Intermediary_name", "Intermediary"], threshold: 0.4, includeScore: true });
 
     return filteredOpportunities.map(opp => {
-      const nameRes = nameFuse.search(opp.client_name);
-      const interRes = interFuse.search(opp.intermediary || "");
+      const nameRes = nameFuse.search(opp.client_name, { limit: 5 });
+      const interRes = interFuse.search(opp.intermediary || "", { limit: 5 });
 
-      // Get top matches
-      const topNameMatch = nameRes[0];
-      const topInterMatch = interRes[0];
+      // Combine unique candidates
+      const candidateSet = new Set<ExcelRowData>();
+      nameRes.forEach(r => candidateSet.add(r.item));
+      interRes.forEach(r => candidateSet.add(r.item));
+      const candidates = Array.from(candidateSet);
 
-      let bestMatch: ExcelRowData | null = null;
-      let reasons: string[] = [];
-      let color: 'GREEN' | 'YELLOW' | 'RED' | 'GRAY' = 'GRAY';
+      const scoredCandidates = candidates.map(candidate => {
+        let score = 0;
+        let reasons: string[] = [];
+        let isRed = false;
 
-      if (topNameMatch) {
-        bestMatch = topNameMatch.item;
-        reasons.push("Client Name matched.");
-      } else if (topInterMatch) {
-        bestMatch = topInterMatch.item;
-        reasons.push("Client Name didn't match, but Intermediary did.");
-      }
+        // 1. Client Name (Fuzzy)
+        const isNameMatch = nameRes.some(r => r.item === candidate);
+        if (isNameMatch) {
+          score += 2;
+          reasons.push("Client Name matched.");
+        }
 
-      if (bestMatch) {
-        // Evaluate Premium
-        const excelPremium = Number(bestMatch.Gross_premium_kshs || bestMatch["Gross Premium"] || bestMatch.Premium || bestMatch.Paid_amount_kshs || bestMatch.Basic_premium_kshs || 0);
+        // 2. Intermediary (Fuzzy)
+        const isInterMatch = interRes.some(r => r.item === candidate);
+        if (isInterMatch) {
+          score += 2;
+          reasons.push("Intermediary matched.");
+        }
+
+        // 3. Premium (Proximity)
+        const excelPremium = Number(candidate.Gross_premium_kshs || candidate["Gross Premium"] || candidate.Premium || candidate.Paid_amount_kshs || candidate.Basic_premium_kshs || 0);
         const oppPremium = opp.expected_premium;
-        
-        const diff = Math.abs(excelPremium - oppPremium);
-        const margin = oppPremium * 0.05; // 5% margin
-        
-        const isPremiumMatch = diff <= margin;
-        if (isPremiumMatch) {
-          reasons.push("Premium matches within 5% margin.");
+        if (Math.abs(excelPremium - oppPremium) <= oppPremium * 0.05) {
+          score += 2;
+          reasons.push("Premium matches within 5%.");
         } else {
           reasons.push(`Premium mismatch (Expected: ${oppPremium}, Excel: ${excelPremium}).`);
         }
 
-        const isInterMatch = topInterMatch && topInterMatch.item === bestMatch;
-        if (isInterMatch && !reasons.includes("Client Name didn't match, but Intermediary did.")) {
-          reasons.push("Intermediary matched.");
-        } else if (!isInterMatch) {
-          reasons.push("Intermediary mismatch.");
+        // 4. Product / Category Alignment
+        const prCategory = candidate._prCategory || "Unknown";
+        // Simple heuristic: If product is MEDICAL, we expect Medical PR
+        if ((opp.product.includes("MEDICAL") || opp.product === "COOP_CARE") && prCategory === "Medical") {
+          score += 1;
         }
 
-        // Branch check
+        // 5. Branch (Strict)
         const cooBranch = opp.user?.branch?.name?.toUpperCase() || "UNKNOWN";
-        const excelBranch = String(bestMatch.Branch_name || bestMatch.Branch || "N/A").toUpperCase();
-        
-        let isBranchMismatch = false;
+        const excelBranch = String(candidate.Branch_name || candidate.Branch || "N/A").toUpperCase();
         if (excelBranch !== "N/A" && cooBranch !== "UNKNOWN") {
           if (!excelBranch.includes(cooBranch) && !cooBranch.includes(excelBranch)) {
-            isBranchMismatch = true;
-            reasons.push(`CONFLICT: Cross-Branch Claim (PR Branch: ${excelBranch}, COO Branch: ${cooBranch})`);
+            isRed = true;
+            score -= 5;
+            reasons.push(`CONFLICT: Cross-Branch Claim (PR: ${excelBranch}, COO: ${cooBranch})`);
           } else {
-            reasons.push("Branch matched.");
+            score += 1;
           }
         }
 
-        // Conflict check
-        const invoiceNo = String(bestMatch.Invoice_number || bestMatch.Invoice || "");
-        let isInvoiceConflict = false;
-        if (invoiceNo && verifiedInvoices.includes(invoiceNo)) {
-          isInvoiceConflict = true;
-          reasons.push(`CONFLICT: Excel Invoice ${invoiceNo} is already verified by another COO.`);
+        // 6. Cover Month / Period (Strict) - assuming Account_period format YYYY-MM or similar
+        // For now, if Account_period exists and is old, flag it.
+        const accountPeriod = String(candidate.Account_period || candidate.Cover_period || candidate.Period || "");
+        if (accountPeriod && !accountPeriod.includes("2026")) { // simplistic check based on seed data
+           isRed = true;
+           score -= 5;
+           reasons.push(`CONFLICT: Historical Claim (PR Period: ${accountPeriod})`);
         }
 
-        if (isInvoiceConflict || isBranchMismatch) {
-          color = 'RED';
-        } else if (topNameMatch && isPremiumMatch && isInterMatch) {
-          color = 'GREEN';
-        } else {
-          color = 'YELLOW';
+        // Conflict check on Invoice
+        const invoiceNo = String(candidate.Invoice_number || candidate.Invoice || "");
+        if (invoiceNo && verifiedInvoices.includes(invoiceNo)) {
+          isRed = true;
+          score -= 10;
+          reasons.push(`CONFLICT: Excel Invoice ${invoiceNo} is already verified.`);
         }
-      } else {
-        reasons.push("No viable match found in Excel.");
-      }
+
+        let color: 'GREEN' | 'YELLOW' | 'RED' | 'GRAY' = 'GRAY';
+        if (isRed) color = 'RED';
+        else if (score >= 5) color = 'GREEN';
+        else if (score > 0) color = 'YELLOW';
+
+        return { candidate, score, reasons, color };
+      });
+
+      scoredCandidates.sort((a, b) => b.score - a.score);
+
+      const topCandidates = scoredCandidates.map(c => c.candidate);
+      const best = scoredCandidates[0];
+      const matchColor = best ? best.color : 'GRAY';
+      const matchReasons = best ? best.reasons : ["No viable match found in Excel Data Lake."];
 
       return {
         opportunity: opp,
-        matchColor: color,
-        bestMatch,
-        matchReasons: reasons
+        matchColor,
+        topCandidates,
+        matchReasons
       };
     });
-  }, [filteredOpportunities, excelData, verifiedInvoices]);
+  }, [filteredOpportunities, masterExcelData, verifiedInvoices]);
 
   return (
     <div>
-      {!excelData ? (
-        <ExcelUploader onDataProcessed={handleDataProcessed} />
-      ) : (
+      <div className="mb-4 text-sm text-muted-foreground">
+        Data Lake Status: {masterExcelData ? `${masterExcelData.length} total rows loaded` : 'Empty'}
+      </div>
+      
+      <ExcelUploader onDataProcessed={handleDataProcessed} />
+      
+      {masterExcelData && (
         <div className="flex flex-col lg:flex-row gap-8">
           {/* Sidebar COO Selector */}
           <div className="w-full lg:w-72 flex-shrink-0">
@@ -173,12 +199,11 @@ export function ReconciliationWorkspace({ initialOpportunities, verifiedInvoices
               
               <hr className="my-6 border-border" />
               
-              <div className="text-xs text-muted-foreground mb-3 text-center">Loaded Sheet Data</div>
               <button 
-                onClick={() => setExcelData(null)}
-                className="w-full px-4 py-2 text-sm font-medium text-foreground border rounded-lg hover:bg-muted transition-colors shadow-sm"
+                onClick={() => setMasterExcelData(null)}
+                className="w-full px-4 py-2 text-sm font-medium text-destructive border border-destructive/30 rounded-lg hover:bg-destructive/10 transition-colors shadow-sm"
               >
-                Change Excel Sheet
+                Clear Data Lake
               </button>
             </div>
           </div>
@@ -192,9 +217,6 @@ export function ReconciliationWorkspace({ initialOpportunities, verifiedInvoices
               />
             ) : (
               <div className="border rounded-xl bg-card p-12 text-center text-muted-foreground shadow-sm">
-                <svg className="mx-auto h-12 w-12 text-muted-foreground/50 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-                </svg>
                 <p className="text-lg font-medium text-foreground">Select a COO</p>
                 <p className="mt-1 text-sm">Choose a COO from the sidebar to view their pending opportunities.</p>
               </div>

@@ -9,6 +9,7 @@ export interface ExcelRowData {
   Branch_name?: string;
   Created_by?: string;
   Policy_number?: string;
+  _prCategory?: string; // Tagged Data Lake
   [key: string]: any;
 }
 
@@ -22,6 +23,7 @@ export function ExcelUploader({ onDataProcessed }: ExcelUploaderProps) {
   const [workbook, setWorkbook] = useState<XLSX.WorkBook | null>(null);
   const [sheetNames, setSheetNames] = useState<string[]>([]);
   const [selectedSheet, setSelectedSheet] = useState<string>("");
+  const [selectedCategory, setSelectedCategory] = useState<string>("Medical");
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -62,8 +64,14 @@ export function ExcelUploader({ onDataProcessed }: ExcelUploaderProps) {
       if (json.length === 0) {
         throw new Error("No data found in the selected sheet.");
       }
+
+      // Inject category tag
+      const taggedJson = json.map(row => ({
+        ...row,
+        _prCategory: selectedCategory
+      }));
       
-      onDataProcessed(json);
+      onDataProcessed(taggedJson);
     } catch (err: any) {
       setError(err.message || "Failed to parse sheet.");
     } finally {
@@ -103,6 +111,18 @@ export function ExcelUploader({ onDataProcessed }: ExcelUploaderProps) {
               {sheetNames.map(name => (
                 <option key={name} value={name}>{name}</option>
               ))}
+            </select>
+          </div>
+          <div className="w-full sm:w-48">
+            <label className="block text-sm font-medium mb-2">PR Category</label>
+            <select 
+              value={selectedCategory}
+              onChange={(e) => setSelectedCategory(e.target.value)}
+              className="w-full border rounded-md px-3 py-2 text-sm bg-background focus:outline-none focus:ring-2 focus:ring-primary"
+            >
+              <option value="Medical">Medical / Coop Care</option>
+              <option value="Non-Medical">Non-Medical</option>
+              <option value="Livestock">Livestock</option>
             </select>
           </div>
           <button 

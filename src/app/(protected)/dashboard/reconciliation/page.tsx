@@ -61,7 +61,8 @@ export default async function ReconciliationPage() {
 
   const verifiedInvoices = verifiedRecords
     .map(v => v.pr_invoice_number)
-    .filter((v): v is string => v !== null);
+    .filter((v): v is string => v !== null)
+    .flatMap(v => v.split(','));
 
   return (
     <div className="container max-w-6xl mx-auto py-8 px-6 lg:px-8">
