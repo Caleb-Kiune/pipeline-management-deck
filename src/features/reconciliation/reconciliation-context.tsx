@@ -29,6 +29,7 @@ export interface ReconciliationState {
   activePeriodYear: number;
   verifiedInvoices: string[];
   allOpportunities: OpportunityWithUser[];
+  activeTab: PrCategory;
 }
 
 export type ReconciliationAction =
@@ -42,7 +43,8 @@ export type ReconciliationAction =
   | { type: 'APPROVE_CANDIDATE'; payload: { opportunityId: string; candidate: ScoredCandidate } }
   | { type: 'REJECT_CLAIM'; payload: { opportunityId: string } }
   | { type: 'FLAG_CLAIM'; payload: { opportunityId: string; note: string } }
-  | { type: 'UNDO_PAYROLL'; payload: { opportunityId: string } };
+  | { type: 'UNDO_PAYROLL'; payload: { opportunityId: string } }
+  | { type: 'SET_TAB'; payload: PrCategory };
 
 function rebuildDataLake(uploads: Record<PrCategory, UploadSlotState>): ExcelRowData[] {
   return PR_CATEGORIES.flatMap(cat => uploads[cat].rows);
@@ -60,6 +62,14 @@ function reducer(state: ReconciliationState, action: ReconciliationAction): Reco
         payrollCart: [],
         claimActions: new Map(),
         flagNotes: new Map()
+      };
+    }
+    case 'SET_TAB': {
+      return {
+        ...state,
+        activeTab: action.payload,
+        selectedClaimId: null,
+        evaluatedCandidates: []
       };
     }
     case 'UPLOAD_FILE': {
@@ -259,6 +269,7 @@ export function ReconciliationProvider({
     activePeriodYear,
     verifiedInvoices,
     allOpportunities: initialOpportunities,
+    activeTab: 'Medical' as PrCategory,
   };
 
   const [state, dispatch] = useReducer(reducer, initialState);

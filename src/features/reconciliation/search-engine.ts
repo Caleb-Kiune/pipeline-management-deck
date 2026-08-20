@@ -52,10 +52,9 @@ function parsePeriodMatchesExact(periodStr: string, activeMonth: number, activeY
 export function findCandidates(
   claim: OpportunityWithUser,
   dataLake: ExcelRowData[],
-  config: { activePeriodMonth: number; activePeriodYear: number; verifiedInvoices: string[] }
+  config: { activePeriodMonth: number; activePeriodYear: number; verifiedInvoices: string[]; activeTab: PrCategory; }
 ): ScoredCandidate[] {
-  const expectedCategory = PRODUCT_TO_PR_CATEGORY[claim.product] || 'Unknown';
-  const filteredLake = dataLake.filter(row => row._prCategory === expectedCategory);
+  const filteredLake = dataLake.filter(row => row._prCategory === config.activeTab);
   
   if (filteredLake.length === 0) return [];
 
@@ -107,8 +106,19 @@ export function findCandidates(
       }
     }
 
-    fieldMatches.product = 'match';
-    score += 1;
+    if (config.activeTab === 'Non-Medical') {
+      const excelProduct = String(candidate._prCategory || '').toUpperCase();
+      const claimCategory = (PRODUCT_TO_PR_CATEGORY[claim.product] || '').toUpperCase();
+      if (excelProduct === claimCategory) {
+        fieldMatches.product = 'match';
+        score += 1;
+      } else {
+        fieldMatches.product = 'mismatch';
+      }
+    } else {
+      fieldMatches.product = 'match';
+      score += 1;
+    }
 
     const accountPeriod = String(
       candidate.Account_period || candidate.Cover_period || candidate.Period || ""

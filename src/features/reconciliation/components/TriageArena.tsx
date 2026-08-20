@@ -5,8 +5,9 @@ import { useReconciliation } from '../reconciliation-context';
 import { CandidateCard } from './CandidateCard';
 import { findCandidates } from '../search-engine';
 import { updateReconciliationStatus } from '../actions/update-reconciliation-status';
-import { PRODUCT_TO_PR_CATEGORY } from '../constants';
 import type { PrCategory } from '../types';
+
+const TRIAGE_GRID_CLASSES = "grid grid-cols-[2fr_1fr_1fr_1fr_120px] gap-x-3 items-center px-4 text-sm";
 
 export function TriageArena() {
   const { state, dispatch } = useReconciliation();
@@ -19,8 +20,9 @@ export function TriageArena() {
       activePeriodMonth: state.activePeriodMonth,
       activePeriodYear: state.activePeriodYear,
       verifiedInvoices: state.verifiedInvoices,
+      activeTab: state.activeTab,
     });
-  }, [claim, state.dataLake, state.activePeriodMonth, state.activePeriodYear, state.verifiedInvoices]);
+  }, [claim, state.dataLake, state.activePeriodMonth, state.activePeriodYear, state.verifiedInvoices, state.activeTab]);
 
   const handleApprove = async (candidate: any) => {
     if (!claim) return;
@@ -56,47 +58,51 @@ export function TriageArena() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6 pb-20">
-      <div className="bg-card border rounded-xl p-5 shadow-sm relative">
-        <div className="absolute top-5 right-5">
-          <button 
-            onClick={handleReject}
-            className="bg-destructive/10 text-destructive hover:bg-destructive hover:text-destructive-foreground text-xs font-semibold px-3 py-1.5 rounded-md transition-colors"
-          >
-            ❌ Reject Claim
-          </button>
+    <div className="max-w-4xl mx-auto pb-20">
+      <div className="sticky top-0 z-10 bg-muted/50 backdrop-blur shadow-sm border-b">
+        <div className={`${TRIAGE_GRID_CLASSES} py-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground border-b border-border/50`}>
+          <span>Client Name</span>
+          <span>Branch</span>
+          <span>Product</span>
+          <span>Expected Premium</span>
+          <span>Actions</span>
         </div>
-        
-        <h3 className="text-xl font-bold text-foreground mb-1 pr-32">{claim.client_name}</h3>
-        <div className="text-sm text-muted-foreground mb-3 font-medium">
-          {claim.product.replace(/_/g, ' ')} · {state.uploads[PRODUCT_TO_PR_CATEGORY[claim.product] as PrCategory]?.category || 'Category'} · Ksh {claim.expected_premium.toLocaleString()}
-        </div>
-        <div className="text-sm text-muted-foreground">
-          Branch: {claim.user?.branch?.name || 'Unknown'} · Intermediary: {claim.intermediary || 'Direct'}
-        </div>
-        {state.claimActions.get(claim.id) === 'flagged' && (
-          <div className="mt-4 p-3 bg-amber-50 text-amber-800 rounded-md text-sm border border-amber-200">
-            <strong>Flag Note:</strong> {state.flagNotes.get(claim.id)?.note}
+
+        <div className={`${TRIAGE_GRID_CLASSES} py-2.5 font-medium text-foreground bg-card/80`}>
+          <span className="truncate font-semibold">{claim.client_name}</span>
+          <span>{claim.user?.branch?.name || 'Unknown'}</span>
+          <span>{claim.product.replace(/_/g, ' ')}</span>
+          <span className="font-mono">Ksh {claim.expected_premium.toLocaleString()}</span>
+          <div className="flex justify-end">
+            <button 
+              onClick={handleReject}
+              className="bg-destructive/10 text-destructive hover:bg-destructive hover:text-destructive-foreground text-xs font-semibold px-3 py-1.5 rounded-md transition-colors"
+            >
+              Reject
+            </button>
           </div>
-        )}
+        </div>
       </div>
 
-      <div>
-        <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-4">
-          — {evaluatedCandidates.length} Candidates Found —
-        </h4>
-        
+      {state.claimActions.get(claim.id) === 'flagged' && (
+        <div className="m-4 p-3 bg-amber-50 text-amber-800 rounded-md text-sm border border-amber-200">
+          <strong>Flag Note:</strong> {state.flagNotes.get(claim.id)?.note}
+        </div>
+      )}
+
+      <div className="mt-4">
         {evaluatedCandidates.length === 0 ? (
-          <div className="text-center p-8 border rounded-lg bg-background text-muted-foreground text-sm italic">
+          <div className="text-center p-8 border rounded-lg bg-background text-muted-foreground text-sm italic mx-4">
             No matching records found in the PR Data Lake.
           </div>
         ) : (
-          <div className="space-y-4">
+          <div className="divide-y divide-border border-b border-border">
             {evaluatedCandidates.map((cand, idx) => (
               <CandidateCard 
                 key={idx} 
                 candidate={cand} 
                 claim={claim} 
+                activeTab={state.activeTab}
                 onApprove={handleApprove}
                 onFlag={handleFlag}
               />

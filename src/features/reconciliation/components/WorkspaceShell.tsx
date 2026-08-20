@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { TopBar } from './TopBar';
+import { CategoryTabs } from './CategoryTabs';
 import { MasterList } from './MasterList';
 import { TriageArena } from './TriageArena';
 import { PayrollCart } from './PayrollCart';
@@ -15,8 +16,9 @@ export function WorkspaceShell() {
   const hasUploads = state.dataLake.length > 0;
 
   return (
-    <div className="grid grid-rows-[auto_1fr_auto] h-[calc(100vh-theme(spacing.16))] w-full bg-background border-x border-border">
+    <div className="grid grid-rows-[auto_auto_1fr_auto] h-[calc(100vh-theme(spacing.16))] w-full bg-background border-x border-border">
       <TopBar />
+      {hasSelectedCoo && <CategoryTabs />}
       
       <div className="grid grid-cols-[320px_1fr] min-h-0">
         <aside className="overflow-y-auto border-r border-border bg-muted/30">
