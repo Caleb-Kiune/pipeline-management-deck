@@ -76,6 +76,8 @@ export default async function ReconciliationPage() {
       <ReconciliationWorkspace 
         initialOpportunities={opportunities} 
         verifiedInvoices={verifiedInvoices}
+        activePeriodMonth={activePeriod.month}
+        activePeriodYear={activePeriod.year}
       />
     </div>
   );

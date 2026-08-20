@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "eslint",
     "postinstall": "prisma generate",
-    "seed:recon": "tsx prisma/seed-reconciliation.ts"
+    "seed:recon": "tsx prisma/seed-reconciliation.ts",
+    "seed:e2e": "tsx prisma/seed-e2e.ts"
   },
   "dependencies": {
     "@base-ui/react": "^1.7.0",

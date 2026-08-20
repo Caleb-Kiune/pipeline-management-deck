@@ -60,7 +60,7 @@ export function PipelineWorkspace({ opportunities }: PipelineWorkspaceProps) {
                 ...editingOpp, 
                 contact_person: editingOpp.contact_person || undefined, 
                 latest_comment: editingOpp.latest_comment || undefined 
-              } : undefined} 
+              } as any : undefined} 
               onSuccess={handleClose} 
             />
           </div>

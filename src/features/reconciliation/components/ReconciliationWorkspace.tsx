@@ -3,19 +3,86 @@
 import { useState, useMemo } from "react";
 import { ExcelUploader, type ExcelRowData } from "./ExcelUploader";
 import { ReconciliationTable } from "./ReconciliationTable";
+import { VerifiedCart } from "./VerifiedCart";
 import Fuse from "fuse.js";
+import type {
+  EvaluatedOpportunity,
+  OpportunityWithUser,
+  ScoredCandidate,
+  Discrepancy,
+  FieldMatchMap,
+  FieldMatchStatus,
+  MatchBucket,
+} from "../types";
+import {
+  PRODUCT_TO_PR_CATEGORY,
+  PREMIUM_TOLERANCE_PERCENT,
+  NAME_MATCH_THRESHOLD,
+  NAME_CANDIDATE_THRESHOLD,
+  COVER_MONTH_TOLERANCE,
+} from "../constants";
 
-export interface EvaluatedOpportunity {
-  opportunity: any;
-  matchColor: 'GREEN' | 'YELLOW' | 'RED' | 'GRAY';
-  topCandidates: ExcelRowData[];
-  matchReasons: string[];
+export interface ReconciliationWorkspaceProps {
+  initialOpportunities: OpportunityWithUser[];
+  verifiedInvoices: string[];
+  activePeriodMonth: number;
+  activePeriodYear: number;
 }
 
-export function ReconciliationWorkspace({ initialOpportunities, verifiedInvoices }: { initialOpportunities: any[], verifiedInvoices: string[] }) {
+function parsePeriodMatchesExact(
+  periodStr: string,
+  activeMonth: number,
+  activeYear: number,
+): boolean {
+  const cleaned = periodStr.trim();
+  const isoMatch = cleaned.match(/^(\d{4})[-/](\d{1,2})$/);
+  if (isoMatch) {
+    return parseInt(isoMatch[1]) === activeYear && parseInt(isoMatch[2]) === activeMonth;
+  }
+  const reversedMatch = cleaned.match(/^(\d{1,2})[-/](\d{4})$/);
+  if (reversedMatch) {
+    return parseInt(reversedMatch[2]) === activeYear && parseInt(reversedMatch[1]) === activeMonth;
+  }
+  const MONTH_NAMES = [
+    'january', 'february', 'march', 'april', 'may', 'june',
+    'july', 'august', 'september', 'october', 'november', 'december'
+  ];
+  const MONTH_ABBREVS = [
+    'jan', 'feb', 'mar', 'apr', 'may', 'jun',
+    'jul', 'aug', 'sep', 'oct', 'nov', 'dec'
+  ];
+  const wordMatch = cleaned.match(/^([a-zA-Z]+)[-\s](\d{4})$/);
+  if (wordMatch) {
+    const monthWord = wordMatch[1].toLowerCase();
+    const year = parseInt(wordMatch[2]);
+    const monthIdx =
+      MONTH_NAMES.indexOf(monthWord) !== -1
+        ? MONTH_NAMES.indexOf(monthWord) + 1
+        : MONTH_ABBREVS.indexOf(monthWord) !== -1
+          ? MONTH_ABBREVS.indexOf(monthWord) + 1
+          : -1;
+    if (monthIdx > 0) {
+      return year === activeYear && monthIdx === activeMonth;
+    }
+  }
+  if (!cleaned.includes(String(activeYear))) {
+    return false;
+  }
+  return true;
+}
+
+export function ReconciliationWorkspace({
+  initialOpportunities,
+  verifiedInvoices,
+  activePeriodMonth,
+  activePeriodYear,
+}: ReconciliationWorkspaceProps) {
   const [masterExcelData, setMasterExcelData] = useState<ExcelRowData[] | null>(null);
   const [selectedCooId, setSelectedCooId] = useState<string | null>(null);
-  const [opportunities, setOpportunities] = useState(initialOpportunities);
+  const [opportunities, setOpportunities] = useState<OpportunityWithUser[]>(initialOpportunities);
+  
+  const [verifiedItems, setVerifiedItems] = useState<EvaluatedOpportunity[]>([]);
+  const [rejectedItems, setRejectedItems] = useState<EvaluatedOpportunity[]>([]);
 
   // Group COOs from opportunities
   const coos = useMemo(() => {
@@ -36,20 +103,32 @@ export function ReconciliationWorkspace({ initialOpportunities, verifiedInvoices
   const handleDataProcessed = (data: ExcelRowData[]) => {
     setMasterExcelData(prev => {
       const existing = prev || [];
-      // Deduplicate: avoid pushing rows with identical stringified content (e.g. from re-uploading same sheet)
       const existingSet = new Set(existing.map(e => JSON.stringify(e)));
       const newUnique = data.filter(d => !existingSet.has(JSON.stringify(d)));
       return [...existing, ...newUnique];
     });
     
-    // Auto-select first COO if available
     if (coos.length > 0 && !selectedCooId) {
       setSelectedCooId(coos[0].id);
     }
   };
 
-  const handleOpportunityMapped = (opportunityId: string) => {
-    setOpportunities(prev => prev.filter(opp => opp.id !== opportunityId));
+  const handleOpportunityVerified = (item: EvaluatedOpportunity) => {
+    setOpportunities(prev => prev.filter(o => o.id !== item.opportunity.id));
+    setVerifiedItems(prev => [item, ...prev]);
+  };
+
+  const handleOpportunityRejected = (item: EvaluatedOpportunity) => {
+    setOpportunities(prev => prev.filter(o => o.id !== item.opportunity.id));
+    setRejectedItems(prev => [...prev, item]);
+  };
+
+  const handleUndoVerify = (opportunityId: string) => {
+    const item = verifiedItems.find(v => v.opportunity.id === opportunityId);
+    if (item) {
+      setVerifiedItems(prev => prev.filter(v => v.opportunity.id !== opportunityId));
+      setOpportunities(prev => [...prev, item.opportunity]);
+    }
   };
 
   const filteredOpportunities = useMemo(() => {
@@ -57,112 +136,207 @@ export function ReconciliationWorkspace({ initialOpportunities, verifiedInvoices
     return opportunities.filter(opp => opp.user_id === selectedCooId);
   }, [opportunities, selectedCooId]);
 
-  // The 6-Point Waterfall Matching Algorithm
   const evaluatedOpportunities = useMemo<EvaluatedOpportunity[]>(() => {
     if (!masterExcelData || masterExcelData.length === 0) return [];
 
-    const nameFuse = new Fuse(masterExcelData, { keys: ["Insured", "Client Name", "Client"], threshold: 0.4, includeScore: true });
-    const interFuse = new Fuse(masterExcelData, { keys: ["Intermediary_name", "Intermediary"], threshold: 0.4, includeScore: true });
+    const nameFuse = new Fuse(masterExcelData, {
+      keys: ["Insured", "Client Name", "Client"],
+      threshold: NAME_CANDIDATE_THRESHOLD,
+      includeScore: true,
+    });
+    const interFuse = new Fuse(masterExcelData, {
+      keys: ["Intermediary_name", "Intermediary"],
+      threshold: 0.4,
+      includeScore: true,
+    });
 
-    return filteredOpportunities.map(opp => {
-      const nameRes = nameFuse.search(opp.client_name, { limit: 5 });
-      const interRes = interFuse.search(opp.intermediary || "", { limit: 5 });
+    return filteredOpportunities.map((opp: OpportunityWithUser) => {
+      // ── 1. CANDIDATE DISCOVERY ──
+      const nameRes = nameFuse.search(opp.client_name, { limit: 10 });
+      const interRes = interFuse.search(opp.intermediary || "", { limit: 10 });
 
-      // Combine unique candidates
       const candidateSet = new Set<ExcelRowData>();
       nameRes.forEach(r => candidateSet.add(r.item));
       interRes.forEach(r => candidateSet.add(r.item));
       const candidates = Array.from(candidateSet);
 
-      const scoredCandidates = candidates.map(candidate => {
+      // ── 2. CANDIDATE SCORING ──
+      const scoredCandidates: ScoredCandidate[] = candidates.map(candidate => {
         let score = 0;
-        let reasons: string[] = [];
-        let isRed = false;
+        let passesAllStrict = true;
+        const discrepancies: Discrepancy[] = [];
+        const fieldMatches: FieldMatchMap = {
+          clientName: 'unavailable',
+          intermediary: 'unavailable',
+          branch: 'unavailable',
+          premium: 'unavailable',
+          product: 'unavailable',
+          coverMonth: 'unavailable',
+        };
 
-        // 1. Client Name (Fuzzy)
-        const isNameMatch = nameRes.some(r => r.item === candidate);
-        if (isNameMatch) {
-          score += 2;
-          reasons.push("Client Name matched.");
-        }
-
-        // 2. Intermediary (Fuzzy)
-        const isInterMatch = interRes.some(r => r.item === candidate);
-        if (isInterMatch) {
-          score += 2;
-          reasons.push("Intermediary matched.");
-        }
-
-        // 3. Premium (Proximity)
-        const excelPremium = Number(candidate.Gross_premium_kshs || candidate["Gross Premium"] || candidate.Premium || candidate.Paid_amount_kshs || candidate.Basic_premium_kshs || 0);
-        const oppPremium = opp.expected_premium;
-        if (Math.abs(excelPremium - oppPremium) <= oppPremium * 0.05) {
-          score += 2;
-          reasons.push("Premium matches within 5%.");
-        } else {
-          reasons.push(`Premium mismatch (Expected: ${oppPremium}, Excel: ${excelPremium}).`);
-        }
-
-        // 4. Product / Category Alignment
-        const prCategory = candidate._prCategory || "Unknown";
-        // Simple heuristic: If product is MEDICAL, we expect Medical PR
-        if ((opp.product.includes("MEDICAL") || opp.product === "COOP_CARE") && prCategory === "Medical") {
-          score += 1;
-        }
-
-        // 5. Branch (Strict)
-        const cooBranch = opp.user?.branch?.name?.toUpperCase() || "UNKNOWN";
-        const excelBranch = String(candidate.Branch_name || candidate.Branch || "N/A").toUpperCase();
-        if (excelBranch !== "N/A" && cooBranch !== "UNKNOWN") {
-          if (!excelBranch.includes(cooBranch) && !cooBranch.includes(excelBranch)) {
-            isRed = true;
-            score -= 5;
-            reasons.push(`CONFLICT: Cross-Branch Claim (PR: ${excelBranch}, COO: ${cooBranch})`);
-          } else {
+        // BRANCH
+        const cooBranch = opp.user?.branch?.name?.toUpperCase() || "";
+        const excelBranch = String(candidate.Branch_name || candidate.Branch || "").toUpperCase();
+        if (cooBranch && excelBranch) {
+          if (excelBranch.includes(cooBranch) || cooBranch.includes(excelBranch)) {
+            fieldMatches.branch = 'match';
             score += 1;
+          } else {
+            fieldMatches.branch = 'mismatch';
+            passesAllStrict = false;
+            discrepancies.push({
+              type: 'CROSS_BRANCH',
+              label: `Branch: ${excelBranch} ⚠`,
+              cooValue: cooBranch,
+              prValue: excelBranch,
+              severity: 'red',
+            });
           }
         }
 
-        // 6. Cover Month / Period (Strict) - assuming Account_period format YYYY-MM or similar
-        // For now, if Account_period exists and is old, flag it.
-        const accountPeriod = String(candidate.Account_period || candidate.Cover_period || candidate.Period || "");
-        if (accountPeriod && !accountPeriod.includes("2026")) { // simplistic check based on seed data
-           isRed = true;
-           score -= 5;
-           reasons.push(`CONFLICT: Historical Claim (PR Period: ${accountPeriod})`);
+        // COVER MONTH
+        const accountPeriod = String(
+          candidate.Account_period || candidate.Cover_period || candidate.Period || ""
+        );
+        if (accountPeriod) {
+          const matchesActivePeriod = parsePeriodMatchesExact(
+            accountPeriod, activePeriodMonth, activePeriodYear
+          );
+          if (matchesActivePeriod) {
+            fieldMatches.coverMonth = 'match';
+            score += 1;
+          } else {
+            fieldMatches.coverMonth = 'mismatch';
+            passesAllStrict = false;
+            discrepancies.push({
+              type: 'HISTORICAL_MONTH',
+              label: `Cover: ${accountPeriod} ⚠`,
+              cooValue: `${activePeriodMonth}/${activePeriodYear}`,
+              prValue: accountPeriod,
+              severity: 'red',
+            });
+          }
         }
 
-        // Conflict check on Invoice
+        // PRODUCT
+        const expectedCategory = PRODUCT_TO_PR_CATEGORY[opp.product] || 'Unknown';
+        const prCategory = candidate._prCategory || 'Unknown';
+        if (expectedCategory !== 'Unknown' && prCategory !== 'Unknown') {
+          if (expectedCategory === prCategory) {
+            fieldMatches.product = 'match';
+            score += 1;
+          } else {
+            fieldMatches.product = 'mismatch';
+            passesAllStrict = false;
+            discrepancies.push({
+              type: 'PRODUCT_MISMATCH',
+              label: `Product: ${prCategory} ≠`,
+              cooValue: expectedCategory,
+              prValue: prCategory,
+              severity: 'orange',
+            });
+          }
+        }
+
+        // NAME
+        const nameHit = nameRes.find(r => r.item === candidate);
+        const nameScore = nameHit?.score ?? 1;
+        if (nameHit && nameScore <= NAME_MATCH_THRESHOLD) {
+          fieldMatches.clientName = 'match';
+          score += 2;
+        } else if (nameHit) {
+          fieldMatches.clientName = 'mismatch';
+          passesAllStrict = false;
+          const prName = candidate.Insured || candidate["Client Name"] || candidate.Client || "Unknown";
+          discrepancies.push({
+            type: 'NAME_FUZZY',
+            label: `Name: ~${prName}`,
+            cooValue: opp.client_name,
+            prValue: String(prName),
+            severity: 'yellow',
+          });
+        }
+
+        // PREMIUM
+        const excelPremium = Number(
+          candidate.Gross_premium_kshs || candidate["Gross Premium"] ||
+          candidate.Premium || candidate.Paid_amount_kshs ||
+          candidate.Basic_premium_kshs || 0
+        );
+        if (excelPremium > 0) {
+          const delta = Math.abs(excelPremium - opp.expected_premium);
+          if (delta <= opp.expected_premium * PREMIUM_TOLERANCE_PERCENT) {
+            fieldMatches.premium = 'match';
+            score += 2;
+          } else {
+            fieldMatches.premium = 'mismatch';
+            discrepancies.push({
+              type: 'PREMIUM_DRIFT',
+              label: `Premium: ±${Math.round(delta).toLocaleString()}`,
+              cooValue: String(opp.expected_premium),
+              prValue: String(excelPremium),
+              severity: 'yellow',
+            });
+          }
+        }
+
+        // INTERMEDIARY
+        const interHit = interRes.find(r => r.item === candidate);
+        if (interHit) {
+          fieldMatches.intermediary = 'match';
+          score += 1;
+        } else {
+          fieldMatches.intermediary = opp.intermediary ? 'mismatch' : 'unavailable';
+        }
+
+        // DISQUALIFIER: Invoice already verified
         const invoiceNo = String(candidate.Invoice_number || candidate.Invoice || "");
         if (invoiceNo && verifiedInvoices.includes(invoiceNo)) {
-          isRed = true;
-          score -= 10;
-          reasons.push(`CONFLICT: Excel Invoice ${invoiceNo} is already verified.`);
+          score = -Infinity;
         }
 
-        let color: 'GREEN' | 'YELLOW' | 'RED' | 'GRAY' = 'GRAY';
-        if (isRed) color = 'RED';
-        else if (score >= 5) color = 'GREEN';
-        else if (score > 0) color = 'YELLOW';
-
-        return { candidate, score, reasons, color };
+        return { candidate, score, passesAllStrict, discrepancies, fieldMatches };
       });
 
       scoredCandidates.sort((a, b) => b.score - a.score);
+      const viableCandidates = scoredCandidates.filter(c => c.score > -Infinity);
 
-      const topCandidates = scoredCandidates.map(c => c.candidate);
-      const best = scoredCandidates[0];
-      const matchColor = best ? best.color : 'GRAY';
-      const matchReasons = best ? best.reasons : ["No viable match found in Excel Data Lake."];
+      if (viableCandidates.length > 1) {
+        const topScore = viableCandidates[0].score;
+        const closeCompetitors = viableCandidates.filter(
+          c => c.score >= topScore * 0.8
+        );
+        if (closeCompetitors.length > 1) {
+          viableCandidates[0].discrepancies.push({
+            type: 'MULTIPLE_CANDIDATES',
+            label: `${closeCompetitors.length} Candidates`,
+            cooValue: '',
+            prValue: '',
+            severity: 'blue',
+          });
+        }
+      }
+
+      const best = viableCandidates[0] || null;
+      let bucket: MatchBucket;
+
+      if (!best || best.score <= 0) {
+        bucket = 'C';
+      } else if (best.passesAllStrict && best.discrepancies.length === 0) {
+        bucket = 'A';
+      } else {
+        bucket = 'B';
+      }
 
       return {
         opportunity: opp,
-        matchColor,
-        topCandidates,
-        matchReasons
+        bucket,
+        bestCandidate: best,
+        allCandidates: viableCandidates,
+        discrepancies: best?.discrepancies || [],
       };
     });
-  }, [filteredOpportunities, masterExcelData, verifiedInvoices]);
+  }, [filteredOpportunities, masterExcelData, verifiedInvoices, activePeriodMonth, activePeriodYear]);
 
   return (
     <div>
@@ -210,10 +384,14 @@ export function ReconciliationWorkspace({ initialOpportunities, verifiedInvoices
 
           {/* Main Table View */}
           <div className="flex-1">
+            <VerifiedCart items={verifiedItems} onUndoVerify={handleUndoVerify} />
+
             {selectedCooId ? (
               <ReconciliationTable 
                 evaluatedOpportunities={evaluatedOpportunities} 
-                onOpportunityMapped={handleOpportunityMapped}
+                onOpportunityRejected={handleOpportunityRejected} 
+                onOpportunityVerified={handleOpportunityVerified} 
+                rejectedItems={rejectedItems} 
               />
             ) : (
               <div className="border rounded-xl bg-card p-12 text-center text-muted-foreground shadow-sm">
