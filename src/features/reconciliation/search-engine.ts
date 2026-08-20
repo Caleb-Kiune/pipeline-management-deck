@@ -88,7 +88,7 @@ export function findCandidates(
 
   const lakeWithCleanedNames: ExcelRowData[] = dataLake.map(row => ({
     ...row,
-    _cleanedName: cleanName(String(row.Insured || row["Client Name"] || row.Client || ""))
+    _cleanedName: cleanName(String(row.Insured || row["Client Name"] || row.Client || row["PROPOSER NAME"] || ""))
   }));
 
   let evaluatedCandidates: Array<{ item: ExcelRowData, score: number }> = [];
@@ -149,7 +149,7 @@ export function findCandidates(
     const discrepancies: ScoredCandidate['discrepancies'] = [];
 
     const cooBranch = claim.user?.branch?.name?.toUpperCase() || "";
-    const excelBranch = String(candidate.Branch_name || candidate.Branch || "").toUpperCase();
+    const excelBranch = String(candidate.Branch_name || candidate.Branch || candidate["BRANCH NAME"] || "").toUpperCase();
     if (cooBranch && excelBranch) {
       if (excelBranch.includes(cooBranch) || cooBranch.includes(excelBranch)) {
         fieldMatches.branch = 'match';
@@ -189,7 +189,8 @@ export function findCandidates(
 
     const excelPremium = Number(
       candidate.Gross_premium_kshs || candidate["Gross Premium"] ||
-      candidate.Premium || candidate.Paid_amount_kshs ||
+      candidate.Premium || candidate["GROSS PREMIUM"] || 
+      candidate["ADJUSTED GROSS PREMIUM"] || candidate.Paid_amount_kshs ||
       candidate.Basic_premium_kshs || 0
     );
     if (excelPremium > 0) {

@@ -22,7 +22,7 @@ export function CandidateCard({ candidate, claim, activeTab, onApprove, onFlag }
   const matches = candidate.fieldMatches;
   const row = candidate.candidate;
   
-  const premium = Number(row.Gross_premium_kshs || row["Gross Premium"] || row.Premium || row.Paid_amount_kshs || row.Basic_premium_kshs || 0);
+  const premium = Number(row.Gross_premium_kshs || row["Gross Premium"] || row.Premium || row["GROSS PREMIUM"] || row["ADJUSTED GROSS PREMIUM"] || row.Paid_amount_kshs || row.Basic_premium_kshs || 0);
 
   return (
     <div className={`hover:bg-muted/30 transition-colors ${isFlagging ? 'bg-amber-50/30' : ''}`}>
@@ -30,7 +30,7 @@ export function CandidateCard({ candidate, claim, activeTab, onApprove, onFlag }
         {/* Col 1: Client Name — partial highlight */}
         <div className="truncate">
           <HighlightedText
-            candidateText={String(row.Insured || row["Client Name"] || row.Client || "Unknown")}
+            candidateText={String(row.Insured || row["Client Name"] || row.Client || row["PROPOSER NAME"] || "Unknown")}
             referenceText={claim.client_name}
             mode="partial"
           />
@@ -39,7 +39,7 @@ export function CandidateCard({ candidate, claim, activeTab, onApprove, onFlag }
         {/* Col 2: Branch — exact highlight */}
         <div className="truncate">
           <HighlightedText
-            candidateText={String(row.Branch_name || row.Branch || "Unknown")}
+            candidateText={String(row.Branch_name || row.Branch || row["BRANCH NAME"] || "Unknown")}
             referenceText={claim.user?.branch?.name || ""}
             mode="exact"
           />
