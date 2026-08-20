@@ -6,6 +6,7 @@ import { PR_CATEGORIES } from '../constants';
 import type { PrCategory } from '../constants';
 import type { ExcelRowData } from '../types';
 import { UploadSlot } from './UploadSlot';
+import { ColumnMapperModal } from './ColumnMapperModal';
 import * as XLSX from 'xlsx';
 import { X, Search } from 'lucide-react';
 
@@ -14,6 +15,12 @@ export function TopBar() {
   const workbooksRef = useRef<Record<string, XLSX.WorkBook>>({});
   const [cooSearch, setCooSearch] = React.useState('');
   const [dropdownOpen, setDropdownOpen] = React.useState(false);
+  const [mappingModalState, setMappingModalState] = React.useState<{
+    category: PrCategory;
+    rawRows: ExcelRowData[];
+    headers: string[];
+    sheetName: string;
+  } | null>(null);
 
   const handleFileSelected = async (category: PrCategory, file: File) => {
     try {
@@ -42,15 +49,42 @@ export function TopBar() {
       
       if (json.length === 0) throw new Error("Sheet is empty");
       
-      const taggedJson = json.map(row => ({
-        ...row,
-        _prCategory: category
-      }));
-      
-      dispatch({ type: 'UPLOAD_PARSED', payload: { category, rows: taggedJson, selectedSheet: sheetName } });
+      const headers = Object.keys(json[0]);
+      setMappingModalState({ category, rawRows: json, headers, sheetName });
     } catch (err: any) {
       dispatch({ type: 'UPLOAD_ERROR', payload: { category, error: err.message || 'Failed to parse sheet' } });
     }
+  };
+
+  const handleConfirmMapping = (mapping: Record<string, string>) => {
+    if (!mappingModalState) return;
+    
+    const safeParsePremium = (val: any) => {
+      if (val === undefined || val === null) return 0;
+      const str = String(val).replace(/,/g, '').trim();
+      const num = Number(str);
+      return isNaN(num) ? 0 : num;
+    };
+
+    const taggedJson = mappingModalState.rawRows.map(row => ({
+      ...row,
+      _prCategory: mappingModalState.category,
+      _mappedName: String(row[mapping.clientName] || 'Unknown'),
+      _mappedBranch: mapping.branch ? String(row[mapping.branch] || 'Unknown') : 'Unknown',
+      _mappedProduct: mapping.product ? String(row[mapping.product] || 'Unknown') : 'Unknown',
+      _mappedPremium: safeParsePremium(row[mapping.premium])
+    }));
+
+    dispatch({ 
+      type: 'UPLOAD_PARSED', 
+      payload: { 
+        category: mappingModalState.category, 
+        rows: taggedJson, 
+        selectedSheet: mappingModalState.sheetName 
+      } 
+    });
+    
+    setMappingModalState(null);
   };
 
   const handleClear = (category: PrCategory) => {
@@ -137,6 +171,17 @@ export function TopBar() {
           />
         ))}
       </div>
+
+      {mappingModalState && (
+        <ColumnMapperModal
+          rawHeaders={mappingModalState.headers}
+          onConfirm={handleConfirmMapping}
+          onCancel={() => {
+            dispatch({ type: 'UPLOAD_CLEAR', payload: { category: mappingModalState.category } });
+            setMappingModalState(null);
+          }}
+        />
+      )}
     </header>
   );
 }

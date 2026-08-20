@@ -88,7 +88,7 @@ export function findCandidates(
 
   const lakeWithCleanedNames: ExcelRowData[] = dataLake.map(row => ({
     ...row,
-    _cleanedName: cleanName(String(row.Insured || row["Client Name"] || row.Client || row["PROPOSER NAME"] || ""))
+    _cleanedName: cleanName(String(row._mappedName || ""))
   }));
 
   let evaluatedCandidates: Array<{ item: ExcelRowData, score: number }> = [];
@@ -149,7 +149,7 @@ export function findCandidates(
     const discrepancies: ScoredCandidate['discrepancies'] = [];
 
     const cooBranch = claim.user?.branch?.name?.toUpperCase() || "";
-    const excelBranch = String(candidate.Branch_name || candidate.Branch || candidate["BRANCH NAME"] || "").toUpperCase();
+    const excelBranch = String(candidate._mappedBranch || "").toUpperCase();
     if (cooBranch && excelBranch) {
       if (excelBranch.includes(cooBranch) || cooBranch.includes(excelBranch)) {
         fieldMatches.branch = 'match';
@@ -159,7 +159,7 @@ export function findCandidates(
     }
 
     if (config.activeTab === 'Non-Medical') {
-      const excelProduct = String(candidate._prCategory || '').toUpperCase();
+      const excelProduct = String(candidate._mappedProduct || '').toUpperCase();
       const claimCategory = (PRODUCT_TO_PR_CATEGORY[claim.product] || '').toUpperCase();
       if (excelProduct === claimCategory) {
         fieldMatches.product = 'match';
@@ -187,12 +187,7 @@ export function findCandidates(
       }
     }
 
-    const excelPremium = Number(
-      candidate.Gross_premium_kshs || candidate["Gross Premium"] ||
-      candidate.Premium || candidate["GROSS PREMIUM"] || 
-      candidate["ADJUSTED GROSS PREMIUM"] || candidate.Paid_amount_kshs ||
-      candidate.Basic_premium_kshs || 0
-    );
+    const excelPremium = Number(candidate._mappedPremium || 0);
     if (excelPremium > 0) {
       const delta = Math.abs(excelPremium - claim.expected_premium);
       if (delta <= claim.expected_premium * 0.05) {

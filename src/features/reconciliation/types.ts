@@ -5,6 +5,10 @@ export type { PrCategory };
 export interface ExcelRowData {
   _prCategory?: string;
   _cleanedName?: string;
+  _mappedName?: string;
+  _mappedBranch?: string;
+  _mappedProduct?: string;
+  _mappedPremium?: number;
   [key: string]: any; 
 }
 

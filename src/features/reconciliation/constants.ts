@@ -33,6 +33,13 @@ export const NAME_STOP_WORDS = [
   'COOPERATIVE', 'CO-OPERATIVE'
 ] as const;
 
+export const KNOWN_HEADERS = {
+  clientName: ['Insured', 'Client Name', 'Client', 'PROPOSER NAME'],
+  branch: ['Branch_name', 'Branch', 'BRANCH NAME'],
+  product: ['Product_name', 'PRODUCT DESCRIPTION ', 'CLASS NAME', 'PLAN TYPE', '_prCategory', 'Product'],
+  premium: ['Gross_premium_kshs', 'Gross Premium', 'Premium', 'GROSS PREMIUM', 'ADJUSTED GROSS PREMIUM', 'Paid_amount_kshs', 'Basic_premium_kshs']
+};
+
 export const STOP_WORD_REGEX = new RegExp(
   `\\b(${NAME_STOP_WORDS.join('|')})\\b`,
   'gi'

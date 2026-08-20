@@ -22,7 +22,7 @@ export function CandidateCard({ candidate, claim, activeTab, onApprove, onFlag }
   const matches = candidate.fieldMatches;
   const row = candidate.candidate;
   
-  const premium = Number(row.Gross_premium_kshs || row["Gross Premium"] || row.Premium || row["GROSS PREMIUM"] || row["ADJUSTED GROSS PREMIUM"] || row.Paid_amount_kshs || row.Basic_premium_kshs || 0);
+  const premium = Number(row._mappedPremium || 0);
 
   return (
     <div className={`hover:bg-muted/30 transition-colors ${isFlagging ? 'bg-amber-50/30' : ''}`}>
@@ -30,7 +30,7 @@ export function CandidateCard({ candidate, claim, activeTab, onApprove, onFlag }
         {/* Col 1: Client Name — partial highlight */}
         <div className="truncate">
           <HighlightedText
-            candidateText={String(row.Insured || row["Client Name"] || row.Client || row["PROPOSER NAME"] || "Unknown")}
+            candidateText={String(row._mappedName || "Unknown")}
             referenceText={claim.client_name}
             mode="partial"
           />
@@ -39,7 +39,7 @@ export function CandidateCard({ candidate, claim, activeTab, onApprove, onFlag }
         {/* Col 2: Branch — exact highlight */}
         <div className="truncate">
           <HighlightedText
-            candidateText={String(row.Branch_name || row.Branch || row["BRANCH NAME"] || "Unknown")}
+            candidateText={String(row._mappedBranch || "Unknown")}
             referenceText={claim.user?.branch?.name || ""}
             mode="exact"
           />
@@ -49,12 +49,12 @@ export function CandidateCard({ candidate, claim, activeTab, onApprove, onFlag }
         <div className="truncate">
           {activeTab === 'Non-Medical' ? (
             <HighlightedText
-              candidateText={String(row._prCategory || "Unknown")}
+              candidateText={String(row._mappedProduct || "Unknown")}
               referenceText={PRODUCT_TO_PR_CATEGORY[claim.product] || ""}
               mode="exact"
             />
           ) : (
-            <span className="text-foreground">{String(row._prCategory || "Unknown")}</span>
+            <span className="text-foreground">{String(row._mappedProduct || "Unknown")}</span>
           )}
         </div>
 
