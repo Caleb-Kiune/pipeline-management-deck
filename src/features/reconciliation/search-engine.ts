@@ -153,6 +153,7 @@ export function findCandidates(
     if (cooBranch && excelBranch) {
       if (excelBranch.includes(cooBranch) || cooBranch.includes(excelBranch)) {
         fieldMatches.branch = 'match';
+        score += 50;
       } else {
         fieldMatches.branch = 'mismatch';
       }
@@ -163,13 +164,13 @@ export function findCandidates(
       const claimCategory = (PRODUCT_TO_PR_CATEGORY[claim.product] || '').toUpperCase();
       if (excelProduct === claimCategory) {
         fieldMatches.product = 'match';
-        score += 1;
+        score += 50;
       } else {
         fieldMatches.product = 'mismatch';
       }
     } else {
       fieldMatches.product = 'match';
-      score += 1;
+      score += 50;
     }
 
     const accountPeriod = String(

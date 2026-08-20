@@ -1,18 +1,26 @@
 "use client";
 
-import React, { useMemo } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { useReconciliation } from '../reconciliation-context';
 import { CandidateCard } from './CandidateCard';
 import { findCandidates } from '../search-engine';
 import { updateReconciliationStatus } from '../actions/update-reconciliation-status';
 import type { PrCategory } from '../types';
+import { Filter } from 'lucide-react';
 
 const TRIAGE_GRID_CLASSES = "grid grid-cols-[2fr_1fr_1fr_1fr_120px] gap-x-3 items-center px-4 text-sm";
 
 export function TriageArena() {
   const { state, dispatch } = useReconciliation();
+  const [isBranchFilterActive, setIsBranchFilterActive] = useState(false);
+  const [isProductFilterActive, setIsProductFilterActive] = useState(false);
   
   const claim = state.allOpportunities.find(c => c.id === state.selectedClaimId);
+  
+  useEffect(() => {
+    setIsBranchFilterActive(false);
+    setIsProductFilterActive(false);
+  }, [claim?.id]);
   
   const evaluatedCandidates = useMemo(() => {
     if (!claim || state.dataLake.length === 0) return [];
@@ -24,6 +32,14 @@ export function TriageArena() {
       manualQuery: state.searchQuery,
     });
   }, [claim, state.dataLake, state.activePeriodMonth, state.activePeriodYear, state.verifiedInvoices, state.activeTab, state.searchQuery]);
+
+  const filteredCandidates = useMemo(() => {
+    return evaluatedCandidates.filter(res => {
+      if (isBranchFilterActive && res.fieldMatches.branch !== 'match') return false;
+      if (isProductFilterActive && res.fieldMatches.product !== 'match') return false;
+      return true;
+    });
+  }, [evaluatedCandidates, isBranchFilterActive, isProductFilterActive]);
 
   const handleApprove = async (candidate: any) => {
     if (!claim) return;
@@ -71,8 +87,33 @@ export function TriageArena() {
 
         <div className={`${TRIAGE_GRID_CLASSES} py-2.5 font-medium text-foreground bg-card/80`}>
           <span className="truncate font-semibold">{claim.client_name}</span>
-          <span>{claim.user?.branch?.name || 'Unknown'}</span>
-          <span>{claim.product.replace(/_/g, ' ')}</span>
+          
+          <button 
+            onClick={() => setIsBranchFilterActive(!isBranchFilterActive)}
+            className={`flex items-center gap-1.5 px-2 py-1 rounded transition-colors text-left truncate ${
+              isBranchFilterActive 
+                ? 'bg-primary/10 text-primary font-semibold border border-primary/20 shadow-sm' 
+                : 'text-muted-foreground hover:bg-muted/50 border border-transparent'
+            }`}
+            title="Toggle exact branch filter"
+          >
+            <Filter size={14} className={isBranchFilterActive ? 'text-primary' : 'opacity-50'} />
+            <span className="truncate">{claim.user?.branch?.name || 'Unknown'}</span>
+          </button>
+
+          <button 
+            onClick={() => setIsProductFilterActive(!isProductFilterActive)}
+            className={`flex items-center gap-1.5 px-2 py-1 rounded transition-colors text-left truncate ${
+              isProductFilterActive 
+                ? 'bg-primary/10 text-primary font-semibold border border-primary/20 shadow-sm' 
+                : 'text-muted-foreground hover:bg-muted/50 border border-transparent'
+            }`}
+            title="Toggle exact product filter"
+          >
+            <Filter size={14} className={isProductFilterActive ? 'text-primary' : 'opacity-50'} />
+            <span className="truncate">{claim.product.replace(/_/g, ' ')}</span>
+          </button>
+
           <span className="font-mono">Ksh {claim.expected_premium.toLocaleString()}</span>
           <div className="flex justify-end">
             <button 
@@ -111,9 +152,22 @@ export function TriageArena() {
           <div className="text-center p-8 border rounded-lg bg-background text-muted-foreground text-sm italic mx-4">
             No matching records found in the PR Data Lake.
           </div>
+        ) : filteredCandidates.length === 0 ? (
+          <div className="text-center p-8 border rounded-lg bg-background text-muted-foreground text-sm mx-4 flex flex-col items-center gap-3">
+            <p className="italic">No candidates match your strict filters. Try toggling them off.</p>
+            <button 
+              onClick={() => {
+                setIsBranchFilterActive(false);
+                setIsProductFilterActive(false);
+              }}
+              className="px-4 py-1.5 bg-muted text-foreground hover:bg-muted/80 rounded-md transition-colors text-xs font-semibold"
+            >
+              Clear Filters
+            </button>
+          </div>
         ) : (
           <div className="divide-y divide-border border-b border-border">
-            {evaluatedCandidates.map((cand, idx) => (
+            {filteredCandidates.map((cand, idx) => (
               <CandidateCard 
                 key={idx} 
                 candidate={cand} 
